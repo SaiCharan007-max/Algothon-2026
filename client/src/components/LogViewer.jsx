@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, Fragment } from 'react'
 import { Link } from 'react-router-dom'
-import { X, ChevronUp, ChevronDown, ArrowRight, FileText, Loader2 } from 'lucide-react'
+import { X, ChevronUp, ChevronDown, ArrowRight, FileText, Loader2, Play, Square } from 'lucide-react'
 import { api } from '../api'
-import { LevelPill, SEV_COLOR } from './ui'
+import { LevelPill, MitreTags, SEV_COLOR } from './ui'
 import { riskText, STAGE_LABELS } from '../lib/format'
 
 const RANK = { low: 1, medium: 2, high: 3, critical: 4 }
@@ -19,14 +19,29 @@ function lineSeverity(alertIds, alerts) {
 
 const keyOf = (file, seq) => `${file}#${seq}`
 
-function Explanation({ uploadId, alertIds, alerts, onClose, onPrev, onNext, position }) {
-  const list = alertIds.map((id) => alerts[id]).filter(Boolean)
+const STEP_MS = 4500
+
+function Explanation({ uploadId, alertIds, alerts, onClose, onPrev, onNext, position, replay }) {
+  // during a replay only the step being played is shown
+  const list = (replay ? [replay.alert.id] : alertIds).map((id) => alerts[id]).filter(Boolean)
   return (
     <div className="relative rounded-xl border border-slate-600 bg-panel-2 p-4 shadow-2xl shadow-black/50">
       {/* the arrow pointing back at the log line */}
       <span className="absolute -left-[7px] top-5 hidden h-3.5 w-3.5 rotate-45 border-b border-l border-slate-600 bg-panel-2 lg:block" />
       <span className="absolute -top-[7px] left-8 h-3.5 w-3.5 rotate-45 border-l border-t border-slate-600 bg-panel-2 lg:hidden" />
 
+      {replay && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between text-xs font-semibold text-rose-200">
+            <span>
+              ▶ Replaying the attack · step {replay.index + 1} of {replay.total}
+            </span>
+          </div>
+          <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-line">
+            <div key={replay.index} className="h-full rounded-full bg-rose-400" style={{ animation: `replay-progress ${STEP_MS}ms linear forwards` }} />
+          </div>
+        </div>
+      )}
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wider text-muted">Why this line is suspicious</span>
         <button onClick={onClose} className="text-slate-500 hover:text-white" title="Close">
@@ -47,6 +62,11 @@ function Explanation({ uploadId, alertIds, alerts, onClose, onPrev, onNext, posi
               <div className="text-[11px] font-semibold uppercase tracking-wider text-rose-300">The risk</div>
               <p className="mt-1 text-[13px] leading-relaxed text-slate-200">{riskText(a)}</p>
             </div>
+            {a.mitre?.length > 0 && (
+              <div className="mt-2">
+                <MitreTags techniques={a.mitre} />
+              </div>
+            )}
             {a.incident_ref && (
               <Link
                 to={`/analysis/${uploadId}/incident/${a.incident_ref}`}
@@ -109,6 +129,38 @@ export default function LogViewer({ uploadId, data }) {
   const current = flagged.find((f) => f.key === selected)
   const index = flagged.findIndex((f) => f.key === selected)
 
+  // ---- attack replay: walk through the steps of the most serious finding
+  const replaySteps = useMemo(() => {
+    const all = Object.values(data.alerts).filter((a) => a.incident_ref)
+    if (!all.length) return []
+    const weight = (a) => RANK[a.incident_severity] * 100 + a.steps
+    const top = all.reduce((b, a) => (weight(a) > weight(b) ? a : b))
+    if (top.steps < 2) return []
+    const steps = all.filter((a) => a.incident_ref === top.incident_ref).sort((x, y) => x.step - y.step)
+    return steps
+      .map((a) => {
+        const lines = flagged.filter((f) => f.item.alerts.includes(a.id))
+        // prefer a line that isn't also part of an earlier step (e.g. the successful
+        // login rather than one of the failed guesses before it)
+        const own = lines.find((f) => !f.item.alerts.some((id) => id !== a.id && data.alerts[id]?.incident_ref === a.incident_ref && data.alerts[id].step < a.step))
+        const pick = own || lines[0]
+        return pick && { key: pick.key, alert: a }
+      })
+      .filter(Boolean)
+  }, [data.alerts, flagged])
+
+  const [replay, setReplay] = useState(null) // index into replaySteps while playing
+  useEffect(() => {
+    if (replay === null) return
+    const step = replaySteps[replay]
+    if (!step) return setReplay(null)
+    setSelected(step.key)
+    rowRefs.current.get(step.key)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const t = setTimeout(() => setReplay((r) => (r !== null && r + 1 < replaySteps.length ? r + 1 : null)), STEP_MS)
+    return () => clearTimeout(t)
+  }, [replay, replaySteps])
+  const replayInfo = replay !== null && replaySteps[replay] ? { index: replay, total: replaySteps.length, alert: replaySteps[replay].alert } : null
+
   // line the popup up with the selected row (desktop). Re-measure whenever the
   // file box changes size, because long lines re-wrap at different widths.
   useLayoutEffect(() => {
@@ -166,6 +218,24 @@ export default function LogViewer({ uploadId, data }) {
 
   return (
     <div className="space-y-6">
+      {replaySteps.length > 1 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-rose-500/30 bg-rose-500/5 px-4 py-3">
+          {replay === null ? (
+            <button className="btn-primary" onClick={() => setReplay(0)}>
+              <Play className="h-4 w-4" /> Replay the attack
+            </button>
+          ) : (
+            <button className="btn-ghost" onClick={() => setReplay(null)}>
+              <Square className="h-4 w-4" /> Stop replay
+            </button>
+          )}
+          <span className="text-sm text-slate-400">
+            {replay === null
+              ? `Watch the ${replaySteps.length} steps of "${replaySteps[0].alert.incident_title}" play out on your log, in the order they happened.`
+              : `Step ${replay + 1} of ${replaySteps.length}: ${STAGE_LABELS[replaySteps[replay].alert.stage]}`}
+          </span>
+        </div>
+      )}
       {files.map((f) => (
         <div key={f.name} className="panel">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
@@ -207,7 +277,11 @@ export default function LogViewer({ uploadId, data }) {
                   <Fragment key={key}>
                     <div
                       ref={(el) => (el ? rowRefs.current.set(key, el) : rowRefs.current.delete(key))}
-                      onClick={() => sev && setSelected(isSel ? null : key)}
+                      onClick={() => {
+                        if (!sev) return
+                        setReplay(null)
+                        setSelected(isSel ? null : key)
+                      }}
                       className={`flex gap-3 px-4 py-[3px] ${sev ? 'cursor-pointer hover:bg-panel-2/80' : ''} ${isSel ? 'bg-panel-2' : ''}`}
                       style={isSel ? { boxShadow: `inset 3px 0 0 ${SEV_COLOR[sev]}` } : undefined}
                     >
@@ -236,10 +310,14 @@ export default function LogViewer({ uploadId, data }) {
                           uploadId={uploadId}
                           alertIds={it.alerts}
                           alerts={data.alerts}
-                          onClose={() => setSelected(null)}
-                          onPrev={() => go(index - 1)}
-                          onNext={() => go(index + 1)}
+                          onClose={() => {
+                    setReplay(null)
+                    setSelected(null)
+                  }}
+                          onPrev={() => (setReplay(null), go(index - 1))}
+                          onNext={() => (setReplay(null), go(index + 1))}
                           position={{ index, total: flagged.length }}
+                          replay={replayInfo}
                         />
                       </div>
                     )}
@@ -255,10 +333,14 @@ export default function LogViewer({ uploadId, data }) {
                   uploadId={uploadId}
                   alertIds={current.item.alerts}
                   alerts={data.alerts}
-                  onClose={() => setSelected(null)}
-                  onPrev={() => go(index - 1)}
-                  onNext={() => go(index + 1)}
+                  onClose={() => {
+                    setReplay(null)
+                    setSelected(null)
+                  }}
+                  onPrev={() => (setReplay(null), go(index - 1))}
+                  onNext={() => (setReplay(null), go(index + 1))}
                   position={{ index, total: flagged.length }}
+                  replay={replayInfo}
                 />
               </div>
             )}

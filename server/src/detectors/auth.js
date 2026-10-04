@@ -97,7 +97,7 @@ export function compromisedLogin(events, cfg) {
       description: (fromIp
         ? `${ok.ip} logged in successfully as "${ok.user}" after ${ipFails.length} failed attempts in the previous ${cfg.lookbackMs / 60_000} min.`
         : `"${ok.user}" logged in from ${ok.ip} after ${userFails.length} failed attempts on that account in the previous ${cfg.lookbackMs / 60_000} min.`) +
-        (after.length ? ` After getting in, the same session did ${after.length} more thing(s).` : ''),
+        (after.length ? ` After getting in, the same session did ${after.length} more ${after.length === 1 ? "action" : "actions"}.` : ''),
       events: [...prior.slice(-10), ok, ...after],
       meta: { ip: ok.ip, priorFailures: prior.length, source: ok.source },
     });

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowDown, ChevronRight, ChevronDown, Search, ShieldAlert, ShieldCheck, ShieldQuestion, Wrench } from 'lucide-react'
+import { ArrowLeft, ArrowDown, ChevronRight, ChevronDown, Search, ShieldAlert, ShieldCheck, ShieldQuestion, Wrench, Target, CircleCheck, CircleX, Info } from 'lucide-react'
 import { api } from '../api'
 import { SeverityBadge, ScoreBar, Chip, Spinner, ErrorBox, StatCard, Empty, LevelPill, SEV_COLOR } from '../components/ui'
 import ActivityChart from '../components/ActivityChart'
@@ -56,6 +56,58 @@ function Verdict({ incidents }) {
         <div className="text-xl font-semibold text-white">No signs of an attack.</div>
         <p className="mt-1 text-slate-300">{incidents.length ? 'Only a few minor things, listed below.' : 'Nothing in these logs matched any of our checks.'}</p>
       </div>
+    </div>
+  )
+}
+
+// only shown for our sample files, where every line's true answer is known
+function AccuracyPanel({ ev }) {
+  const pct = (a, b) => (b ? Math.round((a / b) * 100) : 100)
+  const rows = []
+  if (ev.attack.total) {
+    rows.push({
+      ok: ev.attack.caught === ev.attack.total,
+      big: `${ev.attack.caught}/${ev.attack.total}`,
+      text: `lines of the planted break-in were flagged (${pct(ev.attack.caught, ev.attack.total)}%)`,
+    })
+  }
+  if (ev.attempt.total) {
+    rows.push({ ok: ev.attempt.caught === ev.attempt.total, big: `${ev.attempt.caught}/${ev.attempt.total}`, text: 'lines of the failed password-guessing attempt were flagged' })
+  }
+  rows.push({
+    ok: ev.normal.falseAlarms === 0,
+    big: `${ev.normal.falseAlarms}`,
+    text: `false alarms on ${fmtNum(ev.normal.total)} normal lines${ev.normal.minorNotes ? ` (${ev.normal.minorNotes} minor notes)` : ''}`,
+  })
+  if (ev.odd.total) {
+    rows.push({ ok: true, neutral: true, big: `${ev.odd.flagged}/${ev.odd.total}`, text: 'harmless-but-unusual lines shown as "Minor", for a human to glance at' })
+  }
+
+  return (
+    <div className="panel p-4">
+      <div className="flex items-center gap-2 font-semibold text-white">
+        <Target className="h-4 w-4 text-sky-300" /> How accurate was this?
+      </div>
+      <p className="mt-1 text-xs text-muted">This is one of our sample files, so we know the true answer for every line. Here is LogHound's score against it.</p>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {rows.map((r, i) => (
+          <li key={i} className="flex items-center gap-3 rounded-lg bg-panel-2 px-3 py-2">
+            {r.neutral ? <Info className="h-5 w-5 shrink-0 text-slate-400" /> : r.ok ? <CircleCheck className="h-5 w-5 shrink-0 text-emerald-400" /> : <CircleX className="h-5 w-5 shrink-0 text-sev-high" />}
+            <span className="text-lg font-semibold text-white">{r.big}</span>
+            <span className="text-sm text-slate-400">{r.text}</span>
+          </li>
+        ))}
+      </ul>
+      {ev.attack.missed?.length > 0 && (
+        <div className="mt-3 text-xs text-muted">
+          Missed:{' '}
+          {ev.attack.missed.map((m) => (
+            <div key={`${m.file}${m.line}`} className="mono mt-1 truncate text-slate-400">
+              {m.file}:{m.line} {m.raw}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -156,6 +208,7 @@ export default function Analysis() {
       <section id="verdict" className="scroll-mt-20 space-y-3 border-t border-line pt-6">
         <h2 className="text-lg font-semibold text-white">Verdict</h2>
         <Verdict incidents={data.incidents} />
+        {data.summary.evaluation && <AccuracyPanel ev={data.summary.evaluation} />}
       </section>
 
       {major.length > 0 && (

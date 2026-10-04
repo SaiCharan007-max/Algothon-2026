@@ -1,4 +1,5 @@
-import { Loader2, AlertTriangle } from 'lucide-react'
+import { useState } from 'react'
+import { Loader2, AlertTriangle, Copy, Check } from 'lucide-react'
 import { STAGES, SEVERITY_INFO } from '../lib/format'
 
 const SEV_STYLES = {
@@ -116,6 +117,50 @@ export function StatCard({ label, value, sub, icon: Icon, accent = 'text-slate-1
       </div>
       <div className={`mt-2 text-2xl font-semibold ${accent}`}>{value}</div>
       {sub && <div className="mt-1 text-xs text-muted">{sub}</div>}
+    </div>
+  )
+}
+
+// MITRE ATT&CK technique badge, links to the official technique page
+export function MitreTags({ techniques }) {
+  if (!techniques?.length) return null
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {techniques.map((t) => (
+        <a
+          key={t.id}
+          href={`https://attack.mitre.org/techniques/${t.id.replace('.', '/')}/`}
+          target="_blank"
+          rel="noreferrer"
+          title={`MITRE ATT&CK: ${t.name}`}
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1 rounded border border-violet-500/30 bg-violet-500/10 px-1.5 py-0.5 text-[11px] text-violet-200 hover:bg-violet-500/20"
+        >
+          <span className="font-semibold">{t.id}</span>
+          <span className="text-violet-300/80">{t.name.split(': ').pop()}</span>
+        </a>
+      ))}
+    </div>
+  )
+}
+
+export function CopyCommand({ command }) {
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(command)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // clipboard blocked (http / old browser) - the text is still selectable
+    }
+  }
+  return (
+    <div className="group flex items-start gap-2 rounded-md border border-line bg-black/40 px-2.5 py-1.5">
+      <code className="mono min-w-0 flex-1 whitespace-pre-wrap break-all text-emerald-200">{command}</code>
+      <button onClick={copy} className="shrink-0 text-slate-500 hover:text-white" title="Copy">
+        {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
     </div>
   )
 }

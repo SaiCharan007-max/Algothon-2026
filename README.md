@@ -30,6 +30,13 @@ The idea is to go past "this IP had 40 failed logins" and tell the analyst the w
 2. **Verdict.** At the end: "Someone broke in" / "Nothing confirmed, but a few things look odd" / "No signs of an attack", followed by the findings. Each finding opens the step-by-step incident timeline with evidence.
 3. **Technical details** (folded): activity chart, flagged IPs & users with risk scores, all alerts, and a log search.
 
+**What makes it stand out:**
+
+- **▶ Replay the attack.** One click plays the break-in on your own log file, step by step in the order it happened. The explanation popup moves from line to line with a progress bar.
+- **Fix it now.** Every incident comes with copy-paste commands built from what *this* attacker actually did, e.g. `sudo ufw deny from 203.0.113.45`, `sudo passwd -l deploy && sudo pkill -KILL -u deploy`, `sudo userdel -r sysupdate` (the backdoor user it created), and `sudo ls -la /tmp/.cache.tgz /tmp/.db.sql` (the files it packed up).
+- **MITRE ATT&CK mapping.** Every finding is tagged with its ATT&CK technique (T1110.001 Password Guessing, T1078 Valid Accounts, T1003.008 /etc/shadow, T1136.001 Create Local Account, T1098.004 SSH Authorized Keys, T1053.003 Cron, T1070.002 Clear Linux Logs, T1560.001 Archive, T1048 Exfiltration, T1190 Exploit Public-Facing App…), linked to attack.mitre.org.
+- **It grades itself.** The sample files are labelled line by line by the generator. When you analyze one (one click, or by uploading the downloaded file), the results page shows **"How accurate was this?"**: attack lines caught, failed-attempt lines caught, and false alarms on normal lines.
+
 The home page has two demo files (`attack.log`, `normal.log`). You can **download** them and upload them by hand, or **check them straight away** with one click.
 
 ## Architecture
@@ -92,7 +99,7 @@ All thresholds are in [`server/src/detectors/config.js`](server/src/detectors/co
 cd server && npm test
 ```
 
-**42 tests** (Vitest):
+**47 tests** (Vitest):
 
 - **Parsers:** each format, timezone offsets, URL-decoding of payloads, malformed lines being skipped, format auto-detection, merging files.
 - **Detectors:** each rule fires on the attack pattern **and stays quiet on the look-alike normal case** (a user mistyping their password twice, slow scattered failures, a few 404s, routine `sudo systemctl restart nginx`, normal query strings, normal-size downloads).
@@ -101,7 +108,18 @@ cd server && npm test
   - the noisy-but-failed brute force from another IP is a *separate, lower* incident;
   - **no normal employee, the CI server or routine admin work gets flagged**;
   - it all holds across 4 other random seeds;
-  - **clean logs produce zero alerts** (3 seeds).
+  - **clean logs produce zero alerts** (3 seeds);
+  - **accuracy against the labels:** on 4 random seeds, 100% of attack lines and failed-attempt lines are flagged, with 0 false alarms on normal lines.
+
+Current score on the shipped samples:
+
+| Sample | Attack lines caught | Failed-attempt lines caught | False alarms on normal lines |
+|---|---|---|---|
+| `attack.log` | 57 / 57 | 28 / 28 | 0 / 154 |
+| `normal.log` | n/a | n/a | 0 / 155 |
+| `auth.log` + `access.log` | 114 / 114 | 28 / 28 | 0 / 4,478 |
+
+Building this score is what found our last detection gaps (a lone `'` SQL-injection probe, scanner requests that returned redirects, and activity right after a break-in not being linked), which are now fixed.
 
 The generated files are in [`samples/`](samples/):
 
