@@ -146,9 +146,11 @@ Regenerate sample logs: `cd server && npm run generate`
 
 ## Deployment
 
-- **API:** Render (`render.yaml`). Set `DATABASE_URL` and `CORS_ORIGIN` (the frontend URL).
-- **Web:** Vercel with root `client/`. Set `VITE_API_URL` to the API URL.
-- **DB:** Neon Postgres. The schema is applied automatically on startup.
+Everything runs as **one Render web service** (`render.yaml`): the build step builds the React app, and Express serves both `/api/*` and the built frontend from `client/dist`. That means one URL and no CORS setup.
+
+- Build: `npm ci --prefix server && npm ci --prefix client --include=dev && npm run build --prefix client`
+- Start: `npm start --prefix server`
+- Env: `DATABASE_URL` (Neon Postgres). The schema is applied automatically on startup.
 
 ## Known limitations
 

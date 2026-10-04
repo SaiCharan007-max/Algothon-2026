@@ -1,16 +1,14 @@
+# one service: builds the React app, then Express serves it + the API
 services:
   - type: web
     name: loghound-api
     runtime: node
-    rootDir: server
     plan: free
-    buildCommand: npm ci
-    startCommand: npm start
+    buildCommand: npm ci --prefix server && npm ci --prefix client --include=dev && npm run build --prefix client
+    startCommand: npm start --prefix server
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: 22
       - key: DATABASE_URL
-        sync: false
-      - key: CORS_ORIGIN
         sync: false
