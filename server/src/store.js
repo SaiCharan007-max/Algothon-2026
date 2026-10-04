@@ -98,18 +98,20 @@ export async function getUpload(id) {
   const { rows } = await query('SELECT * FROM uploads WHERE id = $1', [id]);
   if (!rows.length) return null;
   const upload = rows[0];
-  const incidents = await query(
-    `SELECT i.*, (SELECT count(*)::int FROM alerts a WHERE a.incident_id = i.id) AS alert_count
-     FROM incidents i WHERE upload_id = $1 ORDER BY score DESC, first_seen`,
-    [id],
-  );
-  const alerts = await query(
-    `SELECT a.id, a.rule, a.stage, a.severity, a.entity_type, a.entity, a.title, a.description, a.first_seen, a.last_seen,
-            a.meta, i.ref AS incident_ref
-     FROM alerts a LEFT JOIN incidents i ON i.id = a.incident_id
-     WHERE a.upload_id = $1 ORDER BY a.first_seen`,
-    [id],
-  );
+  const [incidents, alerts] = await Promise.all([
+    query(
+      `SELECT i.*, (SELECT count(*)::int FROM alerts a WHERE a.incident_id = i.id) AS alert_count
+       FROM incidents i WHERE upload_id = $1 ORDER BY score DESC, first_seen`,
+      [id],
+    ),
+    query(
+      `SELECT a.id, a.rule, a.stage, a.severity, a.entity_type, a.entity, a.title, a.description, a.first_seen, a.last_seen,
+              a.meta, i.ref AS incident_ref
+       FROM alerts a LEFT JOIN incidents i ON i.id = a.incident_id
+       WHERE a.upload_id = $1 ORDER BY a.first_seen`,
+      [id],
+    ),
+  ]);
   return { ...upload, incidents: incidents.rows, alerts: alerts.rows };
 }
 

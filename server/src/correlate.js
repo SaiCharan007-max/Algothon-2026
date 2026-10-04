@@ -67,15 +67,21 @@ function buildStory(alerts, ips, users, stages) {
 
   const first = alerts[0].firstSeen;
   const last = alerts.reduce((m, a) => (a.lastSeen > m ? a.lastSeen : m), first);
-  const actor = ips.length ? `Attacker at ${ips.join(', ')}` : `Account ${users.join(', ')}`;
+  // only call it an "attacker" once there's real attack behaviour, low stuff may be benign
+  const confident = stages.length > 1 || alerts.some((a) => a.severity === 'high' || a.severity === 'critical');
+  const who = ips.length ? ips.join(', ') : users.join(', ');
+  const actor = confident ? (ips.length ? `Attacker at ${who}` : `Account ${who}`) : `Activity from ${who}`;
+  const span = minutesBetween(first, last) < 1 ? `at ${fmtTime(first)}` : `between ${fmtTime(first)} and ${fmtTime(last)}`;
 
   let summary;
   if (stages.length >= 3) {
     summary = `${actor} moved through ${stages.length} attack stages (${stages.join(' → ')}) over ${fmtDuration(minutesBetween(first, last))}, starting ${fmtTime(first)}${users.length ? ` and ending up with access as ${users.join(', ')}` : ''}.`;
   } else if (stages.length === 2) {
-    summary = `${actor}: ${stages[0].toLowerCase()} followed by ${stages[1].toLowerCase()} between ${fmtTime(first)} and ${fmtTime(last)}.`;
+    summary = `${actor}: ${stages[0].toLowerCase()} followed by ${stages[1].toLowerCase()} ${span}.`;
+  } else if (confident) {
+    summary = `${actor}: isolated ${stages[0].toLowerCase()} activity ${span}, with no sign that it progressed further.`;
   } else {
-    summary = `${actor}: isolated ${stages[0].toLowerCase()} activity between ${fmtTime(first)} and ${fmtTime(last)}.`;
+    summary = `${actor}: low-confidence ${stages[0].toLowerCase()} signal ${span}. Worth a quick check, likely benign on its own.`;
   }
 
   return {
