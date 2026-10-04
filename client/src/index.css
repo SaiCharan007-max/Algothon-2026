@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-bg: #070b14;
+  --color-panel: #0d1424;
+  --color-panel-2: #121b2f;
+  --color-line: #1e293b;
+  --color-muted: #8a99b3;
+
+  --color-sev-critical: #f43f5e;
+  --color-sev-high: #f97316;
+  --color-sev-medium: #eab308;
+  --color-sev-low: #38bdf8;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-bg text-slate-200 font-sans antialiased;
+  background-image: radial-gradient(1200px 500px at 10% -10%, rgba(244, 63, 94, 0.08), transparent 60%),
+    radial-gradient(900px 400px at 100% 0%, rgba(56, 189, 248, 0.06), transparent 60%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+@utility panel {
+  @apply bg-panel/80 border border-line rounded-xl;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed;
+}
+@utility btn-primary {
+  @apply btn bg-rose-500 text-white hover:bg-rose-400;
+}
+@utility btn-ghost {
+  @apply btn border border-line text-slate-300 hover:bg-panel-2 hover:text-white;
+}
+
+@utility input {
+  @apply bg-panel-2 border border-line rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-sky-500/60;
+}
+
+@utility mono {
+  @apply font-mono text-[12px];
+}
+
+/* scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
