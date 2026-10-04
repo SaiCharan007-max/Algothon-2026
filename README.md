@@ -87,7 +87,7 @@ All thresholds are in [`server/src/detectors/config.js`](server/src/detectors/co
 cd server && npm test
 ```
 
-**39 tests** (Vitest):
+**42 tests** (Vitest):
 
 - **Parsers:** each format, timezone offsets, URL-decoding of payloads, malformed lines being skipped, format auto-detection, merging files.
 - **Detectors:** each rule fires on the attack pattern **and stays quiet on the look-alike normal case** (a user mistyping their password twice, slow scattered failures, a few 404s, routine `sudo systemctl restart nginx`, normal query strings, normal-size downloads).
@@ -95,9 +95,18 @@ cd server && npm test
   - the attack is the top incident, critical, with all 8 stages in the right order;
   - the noisy-but-failed brute force from another IP is a *separate, lower* incident;
   - **no normal employee, the CI server or routine admin work gets flagged**;
-  - it all holds across 4 other random seeds.
+  - it all holds across 4 other random seeds;
+  - **clean logs produce zero alerts** (3 seeds).
 
-The generated files are in [`samples/`](samples/), and the **"Run the sample attack scenario"** button in the UI runs the same data.
+The generated files are in [`samples/`](samples/):
+
+| File | What's in it | Expected result |
+|---|---|---|
+| `attack.log` | 3 days of normal SSH activity with a break-in hidden inside | "Someone broke in" (from 203.0.113.45 as `deploy`) |
+| `normal.log` | 3 days of normal SSH activity only | "No signs of an attack" (0 alerts) |
+| `auth.log` + `access.log` | the full scenario, SSH + website logs (upload both together) | 1 break-in across both files, all 8 stages |
+
+The **"Try the demo"** button in the UI runs the full scenario.
 
 ## Run locally
 

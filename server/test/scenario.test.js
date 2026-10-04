@@ -58,6 +58,16 @@ describe('planted attack scenario', () => {
   });
 });
 
+describe('clean logs (no attack, no distractors)', () => {
+  it.each([7, 42, 1234])('seed %i produces zero alerts', (seed) => {
+    const { auth, access } = generate({ seed, attack: false, distractors: false });
+    const { events } = parseFiles([{ name: 'auth.log', text: auth }, { name: 'access.log', text: access }], { year: 2026 });
+    const { alerts, incidents } = analyze(events);
+    expect(alerts).toEqual([]);
+    expect(incidents).toEqual([]);
+  });
+});
+
 describe('robustness across random seeds', () => {
   it.each([1, 7, 1234, 9999])('seed %i still finds the attack without extra serious incidents', (seed) => {
     const { incidents } = run(seed);
