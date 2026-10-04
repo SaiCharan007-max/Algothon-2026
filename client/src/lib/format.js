@@ -11,6 +11,25 @@ export const STAGES = [
   'Exfiltration',
 ]
 
+// friendly name for each attack stage (technical name is shown small next to it)
+export const STAGE_LABELS = {
+  Reconnaissance: 'Looked for weak spots',
+  Exploitation: 'Tried to hack the website',
+  'Credential Access': 'Guessed passwords',
+  'Initial Access': 'Got into an account',
+  'Privilege Escalation': 'Went after admin access',
+  Persistence: 'Set up a backdoor',
+  'Defense Evasion': 'Tried to hide tracks',
+  Exfiltration: 'Took data',
+}
+
+export const SEVERITY_INFO = {
+  critical: { label: 'Act now', hint: 'Someone very likely broke in.' },
+  high: { label: 'Serious', hint: 'A real attack, but it may not have worked.' },
+  medium: { label: 'Suspicious', hint: 'Worth checking soon.' },
+  low: { label: 'Minor', hint: 'Probably harmless.' },
+}
+
 export const RULE_LABELS = {
   brute_force: 'Brute force',
   password_spray: 'Password spray',

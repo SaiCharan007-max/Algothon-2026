@@ -1,5 +1,5 @@
 import { Loader2, AlertTriangle } from 'lucide-react'
-import { STAGES } from '../lib/format'
+import { STAGES, SEVERITY_INFO } from '../lib/format'
 
 const SEV_STYLES = {
   critical: 'bg-sev-critical/15 text-sev-critical border-sev-critical/40',
@@ -19,6 +19,16 @@ export function SeverityBadge({ severity, className = '', children }) {
   return (
     <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${SEV_STYLES[severity] || ''} ${className}`}>
       {children ?? severity}
+    </span>
+  )
+}
+
+// friendly version: "Act now" / "Serious" / "Suspicious" / "Minor"
+export function LevelPill({ severity }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${SEV_STYLES[severity] || ''}`}>
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: SEV_COLOR[severity] }} />
+      {SEVERITY_INFO[severity]?.label || severity}
     </span>
   )
 }

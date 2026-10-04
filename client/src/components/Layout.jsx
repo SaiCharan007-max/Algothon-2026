@@ -13,7 +13,7 @@ export default function Layout() {
           </Link>
           <nav className="flex items-center gap-4 text-sm text-muted">
             <Link to="/" className="hover:text-white">
-              Analyses
+              New check
             </Link>
             <a href="https://github.com/SaiCharan007-max/Algothon-2026" target="_blank" rel="noreferrer" className="hover:text-white" title="Source code">
               <Code2 className="h-4 w-4" />

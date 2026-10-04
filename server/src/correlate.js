@@ -19,16 +19,31 @@ class UnionFind {
 
 const entityKey = (type, value) => `${type}:${value}`;
 
+// plain-english actions, written for someone who isn't a security person
 const RECOMMENDATIONS = {
-  Reconnaissance: (ips) => `Block or rate-limit ${ips.join(', ')} at the firewall / WAF.`,
-  Exploitation: () => 'Review the targeted endpoints for injection flaws and check app logs for successful payloads.',
-  'Credential Access': () => 'Enable account lockout / fail2ban and enforce MFA for SSH and web logins.',
-  'Initial Access': (_ips, users) => `Reset credentials and kill active sessions for ${users.join(', ') || 'affected accounts'}.`,
-  'Privilege Escalation': () => 'Audit sudoers, rotate root and service credentials, check /etc/shadow exposure.',
-  Persistence: () => 'Remove unknown accounts, SSH keys and cron jobs created during the incident.',
-  'Defense Evasion': () => 'Assume logs are incomplete; pull copies from central logging / backups.',
-  Exfiltration: () => 'Identify what data was exposed, rotate secrets in it, and consider breach notification.',
+  Reconnaissance: (ips) => `Block ${ips.join(', ')} on your firewall.`,
+  Exploitation: () => 'Ask a developer to check the attacked pages for SQL injection / input bugs.',
+  'Credential Access': () => 'Turn on account lockout after a few wrong passwords, and use 2-factor login.',
+  'Initial Access': (_ips, users) => `Change the password of ${users.join(', ') || 'the affected accounts'} and log them out everywhere.`,
+  'Privilege Escalation': () => 'Change the admin (root) password and check who is allowed to use sudo.',
+  Persistence: () => 'Delete any new user accounts, SSH keys or scheduled jobs the attacker created.',
+  'Defense Evasion': () => 'Some logs may have been wiped - get copies from your backups.',
+  Exfiltration: () => 'Find out what data was taken and change any passwords or keys that were in it.',
 };
+
+// what each stage looks like in one short phrase, used to write the summary
+const STAGE_VERBS = {
+  Reconnaissance: () => 'scanned the website for weak spots',
+  Exploitation: () => 'tried to hack the website',
+  'Credential Access': () => 'tried to guess passwords',
+  'Initial Access': (users) => (users.length ? `logged in as ${users.join(' and ')}` : 'got into an account'),
+  'Privilege Escalation': () => 'tried to get admin access',
+  Persistence: () => 'set up a backdoor to come back later',
+  'Defense Evasion': () => 'tried to hide their tracks',
+  Exfiltration: () => 'copied data out',
+};
+
+const joinList = (items) => (items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
 
 function severityFromScore(score) {
   if (score >= 80) return 'critical';
@@ -67,21 +82,20 @@ function buildStory(alerts, ips, users, stages) {
 
   const first = alerts[0].firstSeen;
   const last = alerts.reduce((m, a) => (a.lastSeen > m ? a.lastSeen : m), first);
-  // only call it an "attacker" once there's real attack behaviour, low stuff may be benign
+  // only call it an attack once there's real attack behaviour, low stuff may be benign
   const confident = stages.length > 1 || alerts.some((a) => a.severity === 'high' || a.severity === 'critical');
   const who = ips.length ? ips.join(', ') : users.join(', ');
-  const actor = confident ? (ips.length ? `Attacker at ${who}` : `Account ${who}`) : `Activity from ${who}`;
-  const span = minutesBetween(first, last) < 1 ? `at ${fmtTime(first)}` : `between ${fmtTime(first)} and ${fmtTime(last)}`;
+  const mins = minutesBetween(first, last);
+  const when = mins < 1 ? `at ${fmtTime(first)}` : `over ${fmtDuration(mins)}, starting ${fmtTime(first)}`;
+  const verbs = stages.map((s) => STAGE_VERBS[s](users));
 
   let summary;
-  if (stages.length >= 3) {
-    summary = `${actor} moved through ${stages.length} attack stages (${stages.join(' → ')}) over ${fmtDuration(minutesBetween(first, last))}, starting ${fmtTime(first)}${users.length ? ` and ending up with access as ${users.join(', ')}` : ''}.`;
-  } else if (stages.length === 2) {
-    summary = `${actor}: ${stages[0].toLowerCase()} followed by ${stages[1].toLowerCase()} ${span}.`;
+  if (stages.length > 1) {
+    summary = `Someone at ${who} ${joinList(verbs)} - ${when}.`;
   } else if (confident) {
-    summary = `${actor}: isolated ${stages[0].toLowerCase()} activity ${span}, with no sign that it progressed further.`;
+    summary = `${who} ${verbs[0]} ${when}. There's no sign they got any further.`;
   } else {
-    summary = `${actor}: low-confidence ${stages[0].toLowerCase()} signal ${span}. Worth a quick check, likely benign on its own.`;
+    summary = `${alerts[0].title} ${when}. Probably harmless, but worth a quick look.`;
   }
 
   return {
@@ -92,7 +106,9 @@ function buildStory(alerts, ips, users, stages) {
 }
 
 function titleFor(alerts, stages, ips, users) {
-  if (stages.length >= 3) return `Multi-stage intrusion from ${ips[0] || users[0]}`;
+  const actor = ips[0] || users[0];
+  if (stages.length >= 3 && stages.includes('Initial Access')) return `Break-in from ${actor}`;
+  if (stages.length >= 3) return `Repeated attack attempts from ${actor}`;
   const top = [...alerts].sort((a, b) => SEVERITY_WEIGHT[b.severity] - SEVERITY_WEIGHT[a.severity])[0];
   return top.title;
 }

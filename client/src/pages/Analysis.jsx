@@ -1,23 +1,100 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { Activity, AlertOctagon, Crosshair, KeyRound, Users, ArrowLeft, ChevronRight, FileWarning, Search } from 'lucide-react'
+import { ArrowLeft, ChevronRight, ChevronDown, Search, ShieldAlert, ShieldCheck, ShieldQuestion, Wrench } from 'lucide-react'
 import { api } from '../api'
-import { SeverityBadge, ScoreBar, Chip, StageChain, Spinner, ErrorBox, StatCard, Empty, SEV_COLOR } from '../components/ui'
+import { SeverityBadge, ScoreBar, Chip, Spinner, ErrorBox, StatCard, Empty, LevelPill, SEV_COLOR } from '../components/ui'
 import ActivityChart from '../components/ActivityChart'
 import EventsTable from '../components/EventsTable'
-import { fmtTime, fmtDuration, fmtNum, RULE_LABELS } from '../lib/format'
+import { fmtTime, fmtDuration, fmtNum, RULE_LABELS, STAGE_LABELS } from '../lib/format'
 
 const TABS = [
-  { id: 'incidents', label: 'Incidents' },
-  { id: 'entities', label: 'Suspicious IPs & users' },
+  { id: 'chart', label: 'Activity chart' },
+  { id: 'entities', label: 'Flagged IPs & users' },
   { id: 'alerts', label: 'All alerts' },
-  { id: 'events', label: 'Event explorer' },
+  { id: 'events', label: 'Search log lines' },
 ]
+
+function Verdict({ incidents }) {
+  const attacks = incidents.filter((i) => i.severity === 'critical' || i.severity === 'high')
+  const suspicious = incidents.filter((i) => i.severity === 'medium')
+
+  if (attacks.length) {
+    const top = attacks[0]
+    const brokeIn = top.stages.includes('Initial Access')
+    return (
+      <div className="flex items-start gap-4 rounded-xl border border-sev-critical/40 bg-sev-critical/10 p-5">
+        <ShieldAlert className="mt-0.5 h-8 w-8 shrink-0 text-sev-critical" />
+        <div>
+          <div className="text-xl font-semibold text-white">
+            {brokeIn ? 'Someone broke in.' : `We found ${attacks.length === 1 ? 'an attack' : `${attacks.length} attacks`}.`}
+          </div>
+          <p className="mt-1 text-slate-300">
+            {brokeIn
+              ? `The attacker came from ${top.ips[0]} and got into ${top.users.length ? top.users.join(' and ') : 'an account'}. Open the first item below to see exactly what they did.`
+              : 'It doesn\'t look like they got in, but open the items below to check.'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+  if (suspicious.length) {
+    return (
+      <div className="flex items-start gap-4 rounded-xl border border-sev-medium/40 bg-sev-medium/10 p-5">
+        <ShieldQuestion className="mt-0.5 h-8 w-8 shrink-0 text-sev-medium" />
+        <div>
+          <div className="text-xl font-semibold text-white">Nothing confirmed, but a few things look odd.</div>
+          <p className="mt-1 text-slate-300">Have a quick look at the items below.</p>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className="flex items-start gap-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-5">
+      <ShieldCheck className="mt-0.5 h-8 w-8 shrink-0 text-emerald-400" />
+      <div>
+        <div className="text-xl font-semibold text-white">No signs of an attack.</div>
+        <p className="mt-1 text-slate-300">{incidents.length ? 'Only a few minor things, listed below.' : 'Nothing in these logs matched any of our checks.'}</p>
+      </div>
+    </div>
+  )
+}
+
+function FindingCard({ id, inc }) {
+  return (
+    <Link
+      to={`/analysis/${id}/incident/${inc.ref}`}
+      className="panel group block p-4 transition hover:border-slate-500"
+      style={{ borderLeft: `4px solid ${SEV_COLOR[inc.severity]}` }}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <LevelPill severity={inc.severity} />
+        <span className="text-xs text-muted">{fmtTime(inc.first_seen, { seconds: false })} UTC</span>
+      </div>
+      <div className="mt-2 text-lg font-medium text-white">{inc.title}</div>
+      <p className="mt-1 text-sm leading-relaxed text-slate-400">{inc.story.summary}</p>
+      {inc.stages.length > 1 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {inc.stages.map((s, i) => (
+            <span key={s} className="text-xs text-slate-300">
+              <span className="rounded bg-line/70 px-1.5 py-0.5">{STAGE_LABELS[s]}</span>
+              {i < inc.stages.length - 1 && <span className="ml-1.5 text-slate-600">→</span>}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-rose-300 group-hover:text-rose-200">
+        See what happened <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+      </div>
+    </Link>
+  )
+}
 
 export default function Analysis() {
   const { id } = useParams()
   const [params, setParams] = useSearchParams()
-  const tab = params.get('tab') || 'incidents'
+  const tab = params.get('tab')
+  const [showDetails, setShowDetails] = useState(!!tab)
+  const [showMinor, setShowMinor] = useState(false)
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
 
@@ -26,124 +103,110 @@ export default function Analysis() {
     api.getUpload(id).then(setData).catch(setError)
   }, [id])
   useEffect(load, [load])
+  useEffect(() => {
+    if (tab) setShowDetails(true)
+  }, [tab])
 
   const setTab = (t, extra = {}) => setParams({ tab: t, ...extra })
 
   if (error) return <ErrorBox error={error} onRetry={load} />
-  if (!data) return <Spinner label="Loading analysis…" />
+  if (!data) return <Spinner label="Checking results…" />
 
   const { stats, histogram, entities } = data.summary
-  const skipped = data.files.reduce((s, f) => s + f.skipped, 0)
-  const flaggedIps = entities.filter((e) => e.type === 'ip').length
+  const major = data.incidents.filter((i) => i.severity !== 'low')
+  const minor = data.incidents.filter((i) => i.severity === 'low')
+  const activeTab = tab || 'chart'
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <Link to="/" className="mb-3 inline-flex items-center gap-1 text-xs text-muted hover:text-white">
-          <ArrowLeft className="h-3.5 w-3.5" /> All analyses
+        <Link to="/" className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> Check other logs
         </Link>
-        <h1 className="text-2xl font-semibold text-white">{data.name}</h1>
-        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
-          <span>
-            {fmtTime(stats.firstEvent)} → {fmtTime(stats.lastEvent)} UTC
-          </span>
-          {data.files.map((f) => (
-            <span key={f.name} className="mono">
-              {f.name} <span className="text-slate-500">({f.format}, {fmtNum(f.parsed)} events)</span>
-            </span>
-          ))}
+        <h1 className="text-xl font-semibold text-white">{data.name}</h1>
+        <div className="mt-1 text-sm text-muted">
+          We checked {fmtNum(stats.events)} log lines from {fmtTime(stats.firstEvent, { seconds: false })} to {fmtTime(stats.lastEvent, { seconds: false })} UTC.
         </div>
-        {skipped > 0 && (
-          <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200">
-            <FileWarning className="h-3.5 w-3.5" /> {fmtNum(skipped)} line(s) were not recognised and skipped. They can be found in the original file.
+      </div>
+
+      <Verdict incidents={data.incidents} />
+
+      {major.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium text-muted">What we found ({major.length})</h2>
+          {major.map((inc) => (
+            <FindingCard key={inc.id} id={id} inc={inc} />
+          ))}
+        </section>
+      )}
+
+      {minor.length > 0 && (
+        <section>
+          <button className="inline-flex items-center gap-1 text-sm text-muted hover:text-slate-200" onClick={() => setShowMinor((v) => !v)}>
+            <ChevronDown className={`h-4 w-4 transition ${showMinor ? 'rotate-180' : ''}`} />
+            {minor.length} minor thing{minor.length > 1 ? 's' : ''} (probably harmless)
+          </button>
+          {showMinor && (
+            <div className="mt-3 space-y-3">
+              {minor.map((inc) => (
+                <FindingCard key={inc.id} id={id} inc={inc} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      <section className="border-t border-line pt-5">
+        <button
+          className="inline-flex items-center gap-2 text-sm text-muted hover:text-slate-200"
+          onClick={() => {
+            setShowDetails((v) => !v)
+            if (showDetails && tab) setParams({})
+          }}
+        >
+          <Wrench className="h-4 w-4" />
+          {showDetails ? 'Hide technical details' : 'Show technical details'}
+          <ChevronDown className={`h-4 w-4 transition ${showDetails ? 'rotate-180' : ''}`} />
+        </button>
+
+        {showDetails && (
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <StatCard label="Log lines" value={fmtNum(stats.events)} sub={`${fmtNum(stats.uniqueIps)} IPs · ${fmtNum(stats.uniqueUsers)} users`} />
+              <StatCard label="Alerts" value={stats.alerts} sub="from 9 detection rules" />
+              <StatCard label="Flagged" value={entities.length} sub="IPs and accounts" />
+              <StatCard label="Failed logins" value={fmtNum(stats.failedLogins)} sub={`${fmtNum(stats.successfulLogins)} successful`} />
+            </div>
+            <div className="text-xs text-muted">
+              Files:{' '}
+              {data.files.map((f) => `${f.name} (${f.format}, ${fmtNum(f.parsed)} lines read${f.skipped ? `, ${f.skipped} skipped` : ''})`).join(' · ')}
+            </div>
+
+            <div className="flex gap-1 overflow-x-auto border-b border-line">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm transition ${
+                    activeTab === t.id ? 'border-rose-400 text-white' : 'border-transparent text-muted hover:text-slate-200'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === 'chart' && (
+              <div className="panel p-4">
+                <ActivityChart histogram={histogram} />
+              </div>
+            )}
+            {activeTab === 'entities' && <Entities entities={entities} onPick={(f) => setTab('events', f)} />}
+            {activeTab === 'alerts' && <Alerts id={id} alerts={data.alerts} />}
+            {activeTab === 'events' && <Explorer id={id} params={params} setParams={setParams} />}
           </div>
         )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatCard label="Events analyzed" value={fmtNum(stats.events)} sub={`${fmtNum(stats.uniqueIps)} IPs · ${fmtNum(stats.uniqueUsers)} users`} icon={Activity} />
-        <StatCard
-          label="Incidents"
-          value={stats.incidents}
-          sub={`${stats.bySeverity.critical} critical · ${stats.bySeverity.high} high`}
-          icon={AlertOctagon}
-          accent={stats.bySeverity.critical ? 'text-sev-critical' : 'text-slate-100'}
-        />
-        <StatCard label="Alerts" value={stats.alerts} sub="from 9 detection rules" icon={Crosshair} />
-        <StatCard label="Flagged entities" value={entities.length} sub={`${flaggedIps} IPs · ${entities.length - flaggedIps} users`} icon={Users} />
-        <StatCard label="Failed logins" value={fmtNum(stats.failedLogins)} sub={`${fmtNum(stats.successfulLogins)} successful`} icon={KeyRound} />
-      </div>
-
-      <div className="panel p-4">
-        <div className="mb-2 text-sm font-medium text-slate-300">Activity over time</div>
-        <ActivityChart histogram={histogram} />
-      </div>
-
-      <div>
-        <div className="mb-4 flex gap-1 overflow-x-auto border-b border-line">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm transition ${
-                tab === t.id ? 'border-rose-400 text-white' : 'border-transparent text-muted hover:text-slate-200'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {tab === 'incidents' && <Incidents id={id} incidents={data.incidents} />}
-        {tab === 'entities' && <Entities entities={entities} onPick={(f) => setTab('events', f)} />}
-        {tab === 'alerts' && <Alerts id={id} alerts={data.alerts} />}
-        {tab === 'events' && <Explorer id={id} params={params} setParams={setParams} />}
-      </div>
-    </div>
-  )
-}
-
-function Incidents({ id, incidents }) {
-  if (!incidents.length) return <Empty>No incidents. Nothing in these logs matched a detection rule.</Empty>
-  return (
-    <div className="space-y-3">
-      {incidents.map((inc) => (
-        <Link
-          key={inc.id}
-          to={`/analysis/${id}/incident/${inc.ref}`}
-          className="panel group block p-4 transition hover:border-slate-600"
-          style={{ borderLeft: `3px solid ${SEV_COLOR[inc.severity]}` }}
-        >
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="mono text-muted">{inc.ref}</span>
-            <SeverityBadge severity={inc.severity} />
-            <ScoreBar score={inc.score} severity={inc.severity} />
-            <span className="ml-auto text-xs text-muted">
-              {fmtTime(inc.first_seen)} · {fmtDuration(inc.first_seen, inc.last_seen)} · {inc.alert_count} alert{inc.alert_count === 1 ? '' : 's'}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-2 text-lg font-medium text-white">
-            {inc.title}
-            <ChevronRight className="h-4 w-4 text-slate-500 transition group-hover:translate-x-0.5" />
-          </div>
-          <p className="mt-1 text-sm text-muted">{inc.story.summary}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {inc.ips.map((ip) => (
-              <Chip key={ip} tone="ip">
-                {ip}
-              </Chip>
-            ))}
-            {inc.users.map((u) => (
-              <Chip key={u} tone="user">
-                {u}
-              </Chip>
-            ))}
-          </div>
-          <div className="mt-3">
-            <StageChain stages={inc.stages} />
-          </div>
-        </Link>
-      ))}
+      </section>
     </div>
   )
 }
