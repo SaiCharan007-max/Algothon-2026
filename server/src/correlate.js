@@ -102,7 +102,63 @@ function buildStory(alerts, ips, users, stages) {
     summary,
     steps,
     recommendations: stages.map((s) => RECOMMENDATIONS[s]?.(ips, users)).filter(Boolean),
+    fixes: buildFixes(alerts, ips, confident),
   };
+}
+
+// Copy-paste commands for a Linux admin, built from what the attacker actually
+// did (their IP, the accounts they used, the backdoor user, the files they staged).
+function buildFixes(alerts, ips, confident) {
+  const fixes = [];
+  const add = (title, command, why) => {
+    if (!fixes.some((f) => f.command === command)) fixes.push({ title, command, why });
+  };
+  const commands = alerts.filter((a) => a.rule === 'suspicious_command').flatMap((a) => a.meta.commands || []);
+  const has = (rule) => alerts.some((a) => a.rule === rule);
+
+  if (confident) {
+    for (const ip of ips.filter((ip) => !/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|127\.)/.test(ip))) {
+      add(`Block ${ip}`, `sudo ufw deny from ${ip}`, 'Stops this address from reaching the server at all.');
+    }
+  }
+
+  for (const a of alerts.filter((x) => x.rule === 'compromised_login')) {
+    if (a.meta.source === 'auth') {
+      add(`Lock the "${a.entity}" account`, `sudo passwd -l ${a.entity} && sudo pkill -KILL -u ${a.entity}`, 'Locks the password and kicks out any session the attacker still has open. Set a new strong password before unlocking.');
+    } else {
+      add(`Reset "${a.entity}" in the web app`, `# reset the password for "${a.entity}" in your app's admin panel and log out all its sessions`, 'This account was taken over through the website login, not SSH.');
+    }
+  }
+
+  // accounts the attacker created: "useradd -m -s /bin/bash sysupdate" -> sysupdate
+  for (const cmd of commands) {
+    const m = cmd.match(/\b(?:useradd|adduser)\b.*?\s([a-z_][\w.-]*)\s*$/i);
+    if (m) add(`Delete backdoor user "${m[1]}"`, `sudo userdel -r ${m[1]}`, 'The attacker created this account so they could come back later.');
+  }
+  if (commands.some((c) => /authorized_keys/.test(c))) {
+    add('Check SSH keys', 'sudo cat /root/.ssh/authorized_keys', "Remove any key you don't recognise. The attacker added one to log in without a password.");
+  }
+  if (commands.some((c) => /\bcrontab\b|\/etc\/cron/.test(c))) {
+    add('Check scheduled jobs', 'sudo crontab -l -u root; sudo ls -la /etc/cron.d', 'Look for jobs you did not create. Attackers use them to re-open access.');
+  }
+  // files they packed up before sending: "tar czf /tmp/.cache.tgz ..." / "mysqldump ... -r /tmp/.db.sql"
+  const staged = new Set();
+  for (const cmd of commands) {
+    const tar = cmd.match(/\btar\s+-?\w*f\s+(\S+)/);
+    if (tar) staged.add(tar[1]);
+    const dump = cmd.match(/(?:mysqldump|pg_dump)\b.*?(?:-r|--result-file=|-f|>)\s*(\S+)/);
+    if (dump) staged.add(dump[1]);
+  }
+  if (staged.size) {
+    add('See what was taken', `sudo ls -la ${[...staged].join(' ')}`, 'These are the files the attacker packed up. Keep a copy as evidence, then delete them.');
+  }
+  if (has('brute_force') || has('password_spray')) {
+    add('Stop password guessing', 'sudo apt install -y fail2ban && sudo systemctl enable --now fail2ban', 'Automatically bans an IP after a few wrong passwords.');
+  }
+  if (commands.some((c) => /\/var\/log/.test(c))) {
+    add('Check for wiped logs', 'sudo ls -la /var/log /var/log/nginx', 'Empty or missing log files mean the attacker deleted evidence. Use backups for the full picture.');
+  }
+  return fixes;
 }
 
 function titleFor(alerts, stages, ips, users) {

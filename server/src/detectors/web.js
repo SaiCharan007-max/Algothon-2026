@@ -11,7 +11,7 @@ const PROBE_PATHS = [
 const SCANNER_UA = /(sqlmap|nikto|nmap|masscan|zgrab|gobuster|dirbuster|wfuzz|ffuf|nuclei|acunetix|hydra)/i;
 
 const PAYLOADS = [
-  { kind: 'SQL injection', re: /('|%27)\s*(or|and)\s+['\d]|union\s+(all\s+)?select|sleep\(\d+\)|benchmark\(|information_schema|;\s*drop\s+table|--\s*$/i },
+  { kind: 'SQL injection', re: /('|%27)\s*(or|and)\s+['\d]|union\s+(all\s+)?select|sleep\(\d+\)|benchmark\(|information_schema|;\s*drop\s+table|--\s*$|=[^&=]*'(\s*$|\s*(--|#|\)))/i },
   { kind: 'Path traversal', re: /\.\.\/|\.\.\\|%2e%2e|\/etc\/passwd|win\.ini/i },
   { kind: 'XSS', re: /<script|javascript:|onerror\s*=|onload\s*=|<img\s+src/i },
   { kind: 'Command injection', re: /;\s*(cat|ls|id|whoami|wget|curl|nc|bash)\b|\|\s*(cat|id|whoami)\b|`[^`]+`|\$\([^)]*\)/i },
@@ -28,7 +28,8 @@ export function recon(events, cfg) {
       const scannerUa = s.some((e) => SCANNER_UA.test(e.detail || ''));
       if (errors.length < cfg.minErrors && probes.length < cfg.minProbePaths && !scannerUa) continue;
 
-      const evidence = uniq([...probes, ...errors]).sort((a, b) => a.seq - b.seq);
+      // with a known scanner tool every request in the session is part of the scan
+      const evidence = scannerUa ? s : uniq([...probes, ...errors]).sort((a, b) => a.seq - b.seq);
       const paths = uniq(probes.map((e) => e.path));
       alerts.push(
         makeAlert({

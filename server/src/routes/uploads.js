@@ -4,6 +4,7 @@ import { parseFiles, FORMATS } from '../parsers/index.js';
 import { analyze } from '../analyze.js';
 import { saveAnalysis, listUploads, getUpload, getIncident, searchEvents, deleteUpload, getAnnotated, getLines } from '../store.js';
 import { generate } from '../../scripts/generate-logs.js';
+import { matchSamples, evaluate } from '../evaluate.js';
 
 const MAX_FILE_MB = 25;
 const MAX_EVENTS = 250_000;
@@ -37,6 +38,9 @@ async function runAndSave(name, files, year) {
   const started = Date.now();
   const result = analyze(events);
   const analysisMs = Date.now() - started;
+  // if these are our sample files we know the right answer, so grade ourselves
+  const truth = matchSamples(files);
+  if (truth) result.evaluation = evaluate(events, result.alerts, result.incidents, truth);
   const id = await saveAnalysis({ name, files: fileInfo, events, result });
   return { id, files: fileInfo, stats: result.stats, analysisMs };
 }

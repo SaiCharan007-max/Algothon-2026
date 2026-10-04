@@ -85,6 +85,8 @@ export function compromisedLogin(events, cfg) {
     flagged.add(key);
 
     const prior = fromIp ? ipFails : userFails;
+    // everything the same ip + account did in the hour after getting in
+    const after = events.filter((e) => e.ip === ok.ip && e.user === ok.user && e.ts > ok.ts && e.ts - ok.ts <= cfg.followMs);
     const alert = makeAlert({
       rule: 'compromised_login',
       stage: 'Initial Access',
@@ -92,11 +94,12 @@ export function compromisedLogin(events, cfg) {
       entityType: 'user',
       entity: ok.user,
       title: `Attacker got into the "${ok.user}" account`,
-      description: fromIp
+      description: (fromIp
         ? `${ok.ip} logged in successfully as "${ok.user}" after ${ipFails.length} failed attempts in the previous ${cfg.lookbackMs / 60_000} min.`
-        : `"${ok.user}" logged in from ${ok.ip} after ${userFails.length} failed attempts on that account in the previous ${cfg.lookbackMs / 60_000} min.`,
-      events: [...prior.slice(-10), ok],
-      meta: { ip: ok.ip, priorFailures: prior.length },
+        : `"${ok.user}" logged in from ${ok.ip} after ${userFails.length} failed attempts on that account in the previous ${cfg.lookbackMs / 60_000} min.`) +
+        (after.length ? ` After getting in, the same session did ${after.length} more thing(s).` : ''),
+      events: [...prior.slice(-10), ok, ...after],
+      meta: { ip: ok.ip, priorFailures: prior.length, source: ok.source },
     });
     // the moment of compromise is the successful login, not the first failure
     alert.firstSeen = ok.ts;

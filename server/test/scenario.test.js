@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { generate, ATTACKER_IP, NOISE_IP } from '../scripts/generate-logs.js';
 import { parseFiles } from '../src/parsers/index.js';
 import { analyze } from '../src/analyze.js';
+import { evaluate, matchSamples } from '../src/evaluate.js';
 
 const run = (seed) => {
   const { auth, access } = generate({ seed });
@@ -55,6 +56,24 @@ describe('planted attack scenario', () => {
 
   it('every alert carries evidence pointing at real events', () => {
     for (const a of alerts) expect(a.evidence.length).toBeGreaterThan(0);
+  });
+});
+
+describe('accuracy against the generator labels', () => {
+  it.each([42, 1, 7, 1234])('seed %i: every attack line caught, no false alarms on normal lines', (seed) => {
+    const { auth, access, labels } = generate({ seed });
+    const { events } = parseFiles([{ name: 'auth.log', text: auth }, { name: 'access.log', text: access }], { year: 2026 });
+    const { alerts, incidents } = analyze(events);
+    const score = evaluate(events, alerts, incidents, { 'auth.log': labels.auth, 'access.log': labels.access });
+    expect(score.attack.caught).toBe(score.attack.total);
+    expect(score.attempt.caught).toBe(score.attempt.total);
+    expect(score.normal.falseAlarms).toBe(0);
+  });
+
+  it('recognises an uploaded sample file even with windows line endings', () => {
+    const { auth } = generate();
+    expect(matchSamples([{ name: 'x.log', text: auth.replace(/\n/g, '\r\n') }])).not.toBeNull();
+    expect(matchSamples([{ name: 'x.log', text: auth + 'extra line\n' }])).toBeNull();
   });
 });
 

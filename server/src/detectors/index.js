@@ -2,6 +2,7 @@ import { mergeConfig } from './config.js';
 import { bruteForce, passwordSpray, compromisedLogin, unusualLogin } from './auth.js';
 import { suspiciousCommands } from './commands.js';
 import { recon, webAttack, exfiltration } from './web.js';
+import { RULE_MITRE, commandTechniques } from '../lib/mitre.js';
 
 export const RULES = [
   { id: 'brute_force', run: bruteForce, cfg: 'bruteForce' },
@@ -18,6 +19,10 @@ export const RULES = [
 export function runDetectors(events, overrides) {
   const cfg = mergeConfig(overrides);
   const alerts = RULES.flatMap((r) => r.run(events, cfg[r.cfg]));
+  // tag every alert with its MITRE ATT&CK technique(s)
+  for (const a of alerts) {
+    a.meta.mitre = a.rule === 'suspicious_command' ? commandTechniques(a.meta.commands || []) : RULE_MITRE[a.rule] || [];
+  }
   alerts.sort((a, b) => a.firstSeen - b.firstSeen);
   alerts.forEach((a, i) => (a.key = i));
   return alerts;

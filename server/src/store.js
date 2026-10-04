@@ -34,11 +34,11 @@ async function insertEvents(client, uploadId, events) {
 
 export async function saveAnalysis({ name, files, events, result }) {
   return withTransaction(async (client) => {
-    const { stats, histogram, entities, incidents, alerts } = result;
+    const { stats, histogram, entities, incidents, alerts, evaluation } = result;
     const { rows } = await client.query(
       `INSERT INTO uploads (name, files, event_count, first_event, last_event, summary)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [name, JSON.stringify(files), events.length, stats.firstEvent, stats.lastEvent, JSON.stringify({ stats, histogram, entities: entities.slice(0, 300) })],
+      [name, JSON.stringify(files), events.length, stats.firstEvent, stats.lastEvent, JSON.stringify({ stats, histogram, entities: entities.slice(0, 300), evaluation: evaluation || null })],
     );
     const uploadId = rows[0].id;
 
@@ -138,7 +138,7 @@ export async function getAnnotated(uploadId, context = 2) {
   const [ev, al] = await Promise.all([
     query('SELECT seq, file, line_no, raw FROM events WHERE upload_id = $1 ORDER BY file, line_no', [uploadId]),
     query(
-      `SELECT a.id, a.rule, a.stage, a.severity, a.title, a.description, a.evidence, a.first_seen,
+      `SELECT a.id, a.rule, a.stage, a.severity, a.title, a.description, a.evidence, a.first_seen, a.meta->'mitre' AS mitre,
               i.ref AS incident_ref, i.title AS incident_title, i.severity AS incident_severity
        FROM alerts a LEFT JOIN incidents i ON i.id = a.incident_id
        WHERE a.upload_id = $1 ORDER BY a.first_seen, a.id`,

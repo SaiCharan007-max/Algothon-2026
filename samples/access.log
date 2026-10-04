@@ -2989,7 +2989,7 @@
 203.0.113.45 - - [03/Oct/2026:01:49:16 +0000] "GET /cgi-bin/ HTTP/1.1" 404 153 "-" "gobuster/3.6"
 203.0.113.45 - - [03/Oct/2026:01:58:32 +0000] "GET /products?id=12' HTTP/1.1" 500 312 "-" "sqlmap/1.8.4#stable"
 117.136.239.79 - - [03/Oct/2026:01:58:34 +0000] "GET /static/logo.png HTTP/1.1" 200 38833 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
-203.0.113.45 - - [03/Oct/2026:01:58:43 +0000] "GET /products?id=12' OR '1'='1 HTTP/1.1" 500 312 "-" "sqlmap/1.8.4#stable"
+203.0.113.45 - - [03/Oct/2026:01:58:43 +0000] "GET /products?id=12'%20OR%20'1'='1 HTTP/1.1" 500 312 "-" "sqlmap/1.8.4#stable"
 117.136.239.79 - - [03/Oct/2026:01:58:53 +0000] "GET /static/app.js HTTP/1.1" 200 112635 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
 117.136.239.79 - - [03/Oct/2026:01:58:56 +0000] "GET /static/style.css HTTP/1.1" 200 133996 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
 117.136.239.79 - - [03/Oct/2026:01:59:01 +0000] "GET /downloads/catalog.pdf HTTP/1.1" 200 2400000 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"

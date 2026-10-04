@@ -35,14 +35,17 @@ export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3, 
   const t0 = new Date(start).getTime();
   const at = (day, h, m = 0, s = 0) => new Date(t0 + day * 86_400_000 + ((h * 60 + m) * 60 + s) * 1000);
 
-  const auth = []; // [Date, line]
+  // every line remembers what it really is, so we can score the detector later:
+  // normal | attack (the planted break-in) | attempt (failed attack) | odd (harmless but unusual)
+  let label = 'normal';
+  const auth = []; // [Date, line, label]
   const web = [];
   let pid = 1200;
-  const sshd = (d, msg) => auth.push([d, `${syslogTime(d)} web01 sshd[${pid++}]: ${msg}`]);
-  const sudo = (d, user, cmd, runAs = 'root') => auth.push([d, `${syslogTime(d)} web01 sudo: ${user.padStart(8)} : TTY=pts/${int(0, 3)} ; PWD=/home/${user} ; USER=${runAs} ; COMMAND=${cmd}`]);
-  const sudoDenied = (d, user, cmd) => auth.push([d, `${syslogTime(d)} web01 sudo: ${user.padStart(8)} : user NOT in sudoers ; TTY=pts/1 ; PWD=/home/${user} ; USER=root ; COMMAND=${cmd}`]);
+  const sshd = (d, msg) => auth.push([d, `${syslogTime(d)} web01 sshd[${pid++}]: ${msg}`, label]);
+  const sudo = (d, user, cmd, runAs = 'root') => auth.push([d, `${syslogTime(d)} web01 sudo: ${user.padStart(8)} : TTY=pts/${int(0, 3)} ; PWD=/home/${user} ; USER=${runAs} ; COMMAND=${cmd}`, label]);
+  const sudoDenied = (d, user, cmd) => auth.push([d, `${syslogTime(d)} web01 sudo: ${user.padStart(8)} : user NOT in sudoers ; TTY=pts/1 ; PWD=/home/${user} ; USER=root ; COMMAND=${cmd}`, label]);
   const req = (d, ip, user, method, path, status, bytes, ua = UA_BROWSER) =>
-    web.push([d, `${ip} - ${user || '-'} [${nginxTime(d)}] "${method} ${path} HTTP/1.1" ${status} ${bytes} "-" "${ua}"`]);
+    web.push([d, `${ip} - ${user || '-'} [${nginxTime(d)}] "${method} ${path} HTTP/1.1" ${status} ${bytes} "-" "${ua}"`, label]);
 
   const UA_BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36';
   const UA_MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15';
@@ -128,6 +131,7 @@ export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3, 
   // ------------------------------------------------- distractors / noise
   if (distractors) {
     // a noisy but unsuccessful brute force on day 1 (should be a separate, lower incident)
+    label = 'attempt';
     {
       let d = at(0, 14, 2, 0);
       const users = ['root', 'root', 'root', 'admin', 'root', 'ubuntu', 'root'];
@@ -136,6 +140,7 @@ export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3, 
         sshd(d, `Failed password for ${k % 4 === 0 ? 'invalid user ' : ''}${pick(users)} from ${NOISE_IP} port ${int(40000, 60000)} ssh2`);
       }
     }
+    label = 'odd';
     // carol logs in from home on the evening of day 3 (new IP + odd hour -> low/medium, not critical)
     sshd(at(2, 17, 40, 12), `Accepted publickey for carol from 49.36.122.18 port 51514 ssh2`);
     sshd(at(2, 18, 2, 40), `Disconnected from user carol 49.36.122.18 port 51514`);
@@ -145,6 +150,7 @@ export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3, 
 
   // ------------------------------------------------------- the attack (day 3)
   if (attack) {
+    label = 'attack';
     const A = ATTACKER_IP;
     const D = 2;
     // 1) recon: directory brute forcing the web app
@@ -176,7 +182,9 @@ export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3, 
       ];
       for (const p of payloads) {
         d = new Date(+d + int(5, 25) * 1000);
-        req(d, A, null, 'GET', p, p.includes('UNION') && p.includes('username') ? 200 : 500, p.includes('username') ? 4821 : 312, 'sqlmap/1.8.4#stable');
+        // real clients percent-encode spaces, so the log line never contains a raw space in the URL
+        const url = p.replace(/ /g, '%20');
+        req(d, A, null, 'GET', url, p.includes('UNION') && p.includes('username') ? 200 : 500, p.includes('username') ? 4821 : 312, 'sqlmap/1.8.4#stable');
       }
     }
     // 3) credential access: ssh brute force + spraying usernames
@@ -225,8 +233,15 @@ export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3, 
     sshd(at(D, 2, 58, 30), `Disconnected from user deploy ${A} port 50311`);
   }
 
-  const toText = (rows) => rows.sort((a, b) => a[0] - b[0]).map((x) => x[1]).join('\n') + '\n';
-  return { auth: toText(auth), access: toText(web) };
+  const sorted = (rows) => rows.sort((a, b) => a[0] - b[0]);
+  const toText = (rows) => sorted(rows).map((x) => x[1]).join('\n') + '\n';
+  // 1-based line numbers per label (normal lines are "everything else")
+  const toLabels = (rows) => {
+    const out = { attack: [], attempt: [], odd: [], total: rows.length };
+    sorted(rows).forEach((x, i) => x[2] !== 'normal' && out[x[2]].push(i + 1));
+    return out;
+  };
+  return { auth: toText(auth), access: toText(web), labels: { auth: toLabels(auth), access: toLabels(web) } };
 }
 
 if (process.argv[1]?.endsWith('generate-logs.js')) {

@@ -4,7 +4,7 @@ const MIN = 60_000;
 export const DEFAULT_CONFIG = {
   bruteForce: { windowMs: 5 * MIN, minFailures: 10, sessionGapMs: 10 * MIN },
   spray: { sessionGapMs: 15 * MIN, minUsers: 5 },
-  compromise: { lookbackMs: 30 * MIN, minPriorFailures: 5 },
+  compromise: { lookbackMs: 30 * MIN, minPriorFailures: 5, followMs: 60 * MIN },
   unusualLogin: { minHistory: 3, hourTolerance: 2 },
   commands: { sessionGapMs: 30 * MIN },
   recon: { sessionGapMs: 10 * MIN, minErrors: 20, minProbePaths: 3 },
