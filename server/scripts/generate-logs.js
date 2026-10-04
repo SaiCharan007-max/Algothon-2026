@@ -24,7 +24,7 @@ const syslogTime = (d) => `${MON[d.getUTCMonth()]} ${String(d.getUTCDate()).padS
 const nginxTime = (d) => `${pad(d.getUTCDate())}/${MON[d.getUTCMonth()]}/${d.getUTCFullYear()}:${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} +0000`;
 
 export const ATTACKER_IP = '203.0.113.45';
-export const NOISE_IP = '185.220.101.7';
+export const NOISE_IP = '198.51.100.77';
 
 export function generate({ seed = 42, start = '2026-10-01T00:00:00Z', days = 3 } = {}) {
   const r = rng(seed);
