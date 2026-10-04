@@ -36,8 +36,14 @@ export default function Home() {
   }, [])
 
   const addFiles = (list) => {
-    setFiles((prev) => [...prev, ...list].slice(0, 10))
-    setError(null)
+    // copy first: the input's FileList is live and gets emptied when the input is reset
+    const all = Array.from(list)
+    // only text logs: .log/.txt/.csv/.json(l), rotated logs (auth.log.1) or no extension (secure, syslog)
+    const ok = (f) => !/\.[^./\\]+$/.test(f.name) || /\.(log|txt|csv|json|jsonl|ndjson|out)(\.\d+)?$/i.test(f.name)
+    const picked = all.filter(ok)
+    const rejected = all.filter((f) => !ok(f))
+    setFiles((prev) => [...prev, ...picked].slice(0, 10))
+    setError(rejected.length ? new Error(`Can't use ${rejected.map((f) => f.name).join(', ')}. Upload text logs only: .log, .txt, .csv or .json.`) : null)
   }
 
   const run = async (kind) => {
@@ -106,6 +112,7 @@ export default function Home() {
             ref={inputRef}
             type="file"
             multiple
+            accept=".log,.txt,.csv,.json,.jsonl,.ndjson,.out,.1,.2,.3"
             className="hidden"
             onChange={(e) => {
               addFiles(e.target.files)
