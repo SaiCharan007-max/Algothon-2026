@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import { query } from './db.js';
+import { uploadsRouter } from './routes/uploads.js';
+import { RULES } from './detectors/index.js';
+import { DEFAULT_CONFIG } from './detectors/config.js';
 
 export function createApp() {
   const app = express();
@@ -14,8 +17,17 @@ export function createApp() {
     res.json({ ok: true });
   });
 
+  // exposes which rules exist and their thresholds (shown on the "how it works" panel)
+  app.get('/api/rules', (_req, res) => {
+    res.json({ rules: RULES.map((r) => r.id), config: DEFAULT_CONFIG });
+  });
+
+  app.use('/api/uploads', uploadsRouter);
+
+  app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
+
   app.use((err, _req, res, _next) => {
-    console.error(err);
+    if (!err.expose) console.error(err);
     res.status(err.status || 500).json({ error: err.expose ? err.message : 'Internal server error' });
   });
 

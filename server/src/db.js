@@ -6,6 +6,9 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+// bigint (byte counts) comes back as a string by default - our values fit in a JS number
+pg.types.setTypeParser(20, Number);
+
 export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   max: 5,
