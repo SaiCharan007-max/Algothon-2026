@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { parseFiles, FORMATS } from '../parsers/index.js';
 import { analyze } from '../analyze.js';
-import { saveAnalysis, listUploads, getUpload, getIncident, searchEvents, deleteUpload } from '../store.js';
+import { saveAnalysis, listUploads, getUpload, getIncident, searchEvents, deleteUpload, getAnnotated, getLines } from '../store.js';
 import { generate } from '../../scripts/generate-logs.js';
 
 const MAX_FILE_MB = 25;
@@ -64,8 +64,21 @@ uploadsRouter.post('/', upload.array('files', 10), async (req, res) => {
   res.status(201).json(await runAndSave(name, files, year));
 });
 
-// one click demo data for judges / first time users
-uploadsRouter.post('/sample', async (_req, res) => {
+// demo data. Same generator + seeds as the files in /samples, so downloading
+// a sample and uploading it by hand gives exactly the same result.
+export const SAMPLES = {
+  'attack.log': () => generate({ seed: 42 }).auth,
+  'normal.log': () => generate({ seed: 7, attack: false, distractors: false }).auth,
+};
+
+// one click demo: ?name=attack.log | normal.log, or no name for the full ssh + web scenario
+uploadsRouter.post('/sample', async (req, res) => {
+  const name = req.query.name;
+  if (name) {
+    if (!SAMPLES[name]) throw httpError(404, 'Unknown sample');
+    const files = [{ name, text: SAMPLES[name](), format: 'auth' }];
+    return res.status(201).json(await runAndSave(name, files, 2026));
+  }
   const { auth, access } = generate();
   const files = [
     { name: 'auth.log', text: auth, format: 'auth' },
@@ -84,6 +97,19 @@ uploadsRouter.get('/:id/incidents/:ref', async (req, res) => {
   const data = await getIncident(idParam(req), req.params.ref);
   if (!data) throw httpError(404, 'Incident not found');
   res.json(data);
+});
+
+uploadsRouter.get('/:id/annotated', async (req, res) => {
+  const data = await getAnnotated(idParam(req));
+  if (!data) throw httpError(404, 'Upload not found');
+  res.json(data);
+});
+
+uploadsRouter.get('/:id/lines', async (req, res) => {
+  const from = Number(req.query.from);
+  const to = Number(req.query.to);
+  if (!req.query.file || !Number.isInteger(from) || !Number.isInteger(to)) throw httpError(400, 'file, from and to are required');
+  res.json(await getLines(idParam(req), String(req.query.file), from, to));
 });
 
 uploadsRouter.get('/:id/events', async (req, res) => {

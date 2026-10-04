@@ -30,6 +30,29 @@ export const SEVERITY_INFO = {
   low: { label: 'Minor', hint: 'Probably harmless.' },
 }
 
+// "what's the risk" text shown in the popup next to a suspicious log line
+const STAGE_RISK = {
+  'Privilege Escalation': 'Reading the password file or giving an account admin rights lets an attacker take full control of the server.',
+  Persistence: 'A new account, SSH key or scheduled job lets the attacker get back in even after you change the password.',
+  'Defense Evasion': 'Deleting logs or turning off security tools is done to hide what happened, so you might not see everything.',
+  Exfiltration: 'Data is being bundled up or sent off the server. This is how data gets stolen.',
+}
+
+const RULE_RISK = {
+  brute_force: 'Someone is trying password after password. If any account has a weak password, they will eventually get in.',
+  password_spray: 'They are trying lots of usernames to find accounts that exist and have a weak password.',
+  compromised_login: 'This login worked right after a long run of wrong guesses. The attacker most likely guessed the password and is now inside.',
+  unusual_login: "This account logged in from somewhere it has never used before. Fine if it's really them (e.g. working from home), bad if the password was stolen.",
+  sudo_denied: 'An account without admin rights tried to run admin commands. Usually a mistake, but it can be an attacker testing what they can do.',
+  recon_scan: 'Someone is probing the website for secret files (.env, .git, admin pages). Finding one could leak passwords or keys.',
+  web_attack: 'These requests contain hacking code such as SQL injection. If the website is vulnerable, the attacker can read or change your database.',
+  data_exfiltration: 'Far more data than normal was downloaded. This can mean your database is being copied out.',
+}
+
+export function riskText(alert) {
+  return (alert.rule === 'suspicious_command' && STAGE_RISK[alert.stage]) || RULE_RISK[alert.rule] || alert.description
+}
+
 export const RULE_LABELS = {
   brute_force: 'Brute force',
   password_spray: 'Password spray',

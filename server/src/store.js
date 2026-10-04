@@ -129,6 +129,98 @@ export async function getIncident(uploadId, ref) {
   return { ...incident, alerts: alerts.rows, evidence: evidence.rows };
 }
 
+// Log lines for the "annotated file" view: every flagged line plus a couple of
+// lines of context around it. Long runs of normal lines are collapsed into gaps.
+export async function getAnnotated(uploadId, context = 2) {
+  const up = await query('SELECT files FROM uploads WHERE id = $1', [uploadId]);
+  if (!up.rows.length) return null;
+
+  const [ev, al] = await Promise.all([
+    query('SELECT seq, file, line_no, raw FROM events WHERE upload_id = $1 ORDER BY file, line_no', [uploadId]),
+    query(
+      `SELECT a.id, a.rule, a.stage, a.severity, a.title, a.description, a.evidence, a.first_seen,
+              i.ref AS incident_ref, i.title AS incident_title, i.severity AS incident_severity
+       FROM alerts a LEFT JOIN incidents i ON i.id = a.incident_id
+       WHERE a.upload_id = $1 ORDER BY a.first_seen, a.id`,
+      [uploadId],
+    ),
+  ]);
+
+  // step number of each alert inside its incident (same order as the incident page)
+  const stepCounter = new Map();
+  const alerts = {};
+  const flagged = new Map(); // seq -> [alert ids]
+  for (const a of al.rows) {
+    const n = (stepCounter.get(a.incident_ref) || 0) + 1;
+    stepCounter.set(a.incident_ref, n);
+    const { evidence, ...rest } = a;
+    alerts[a.id] = { ...rest, step: n, lines: evidence.length };
+    for (const seq of evidence) {
+      if (!flagged.has(seq)) flagged.set(seq, []);
+      flagged.get(seq).push(a.id);
+    }
+  }
+  for (const a of Object.values(alerts)) a.steps = stepCounter.get(a.incident_ref);
+
+  const byFile = new Map();
+  for (const e of ev.rows) {
+    if (!byFile.has(e.file)) byFile.set(e.file, []);
+    byFile.get(e.file).push(e);
+  }
+
+  const files = up.rows[0].files.map((f) => {
+    const lines = byFile.get(f.name) || [];
+    const anyFlagged = lines.some((l) => flagged.has(l.seq));
+    // a clean, small file is shown in full so you can see there's nothing wrong in it
+    const keep = new Array(lines.length).fill(!anyFlagged && lines.length <= 500);
+    lines.forEach((l, i) => {
+      if (!flagged.has(l.seq)) return;
+      for (let j = Math.max(0, i - context); j <= Math.min(lines.length - 1, i + context); j++) keep[j] = true;
+    });
+    // don't bother folding tiny runs ("3 lines hidden" is just noise)
+    for (let i = 0; i < lines.length; ) {
+      if (keep[i]) {
+        i++;
+        continue;
+      }
+      let j = i;
+      while (j < lines.length && !keep[j]) j++;
+      if (j - i <= 5) for (let k = i; k < j; k++) keep[k] = true;
+      i = j;
+    }
+
+    const items = [];
+    let gap = null;
+    lines.forEach((l, i) => {
+      if (keep[i]) {
+        if (gap) items.push(gap);
+        gap = null;
+        items.push({ type: 'line', seq: l.seq, line: l.line_no, raw: l.raw, alerts: flagged.get(l.seq) || [] });
+      } else {
+        if (!gap) gap = { type: 'gap', count: 0, fromLine: l.line_no, toLine: l.line_no };
+        gap.count++;
+        gap.toLine = l.line_no;
+      }
+    });
+    if (gap) items.push(gap);
+
+    return { name: f.name, format: f.format, totalLines: lines.length, flaggedLines: lines.filter((l) => flagged.has(l.seq)).length, items };
+  });
+
+  return { files, alerts };
+}
+
+// plain lines of one file between two line numbers (used to expand a collapsed gap)
+export async function getLines(uploadId, file, fromLine, toLine, limit = 500) {
+  const { rows } = await query(
+    `SELECT seq, line_no, raw FROM events
+     WHERE upload_id = $1 AND file = $2 AND line_no BETWEEN $3 AND $4
+     ORDER BY line_no LIMIT $5`,
+    [uploadId, file, fromLine, toLine, limit],
+  );
+  return rows.map((r) => ({ type: 'line', seq: r.seq, line: r.line_no, raw: r.raw, alerts: [] }));
+}
+
 export async function searchEvents(uploadId, { ip, user, source, outcome, action, q, limit = 100, offset = 0 }) {
   const where = ['upload_id = $1'];
   const params = [uploadId];

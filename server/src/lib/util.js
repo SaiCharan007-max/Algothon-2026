@@ -70,7 +70,7 @@ export function formatBytes(n) {
 export const uniq = (arr) => [...new Set(arr.filter((x) => x !== null && x !== undefined))];
 
 // keep evidence lists readable - first N and last few events
-export function sampleEvidence(events, max = 40) {
+export function sampleEvidence(events, max = 400) {
   if (events.length <= max) return events.map((e) => e.seq);
   const head = events.slice(0, max - 5);
   const tail = events.slice(-5);

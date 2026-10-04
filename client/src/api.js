@@ -19,7 +19,10 @@ export const api = {
   getUpload: (id) => request(`/uploads/${id}`),
   getIncident: (id, ref) => request(`/uploads/${id}/incidents/${ref}`),
   deleteUpload: (id) => request(`/uploads/${id}`, { method: 'DELETE' }),
-  runSample: () => request('/uploads/sample', { method: 'POST' }),
+  runSample: (name) => request(`/uploads/sample${name ? `?name=${encodeURIComponent(name)}` : ''}`, { method: 'POST' }),
+  sampleUrl: (name) => `${BASE}/api/samples/${encodeURIComponent(name)}`,
+  annotated: (id) => request(`/uploads/${id}/annotated`),
+  lines: (id, file, from, to) => request(`/uploads/${id}/lines?${new URLSearchParams({ file, from, to })}`),
   events: (id, params) => {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null))
     return request(`/uploads/${id}/events?${qs}`)

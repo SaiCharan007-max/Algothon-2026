@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ChevronRight, ChevronDown, Search, ShieldAlert, ShieldCheck, ShieldQuestion, Wrench } from 'lucide-react'
+import { ArrowLeft, ArrowDown, ChevronRight, ChevronDown, Search, ShieldAlert, ShieldCheck, ShieldQuestion, Wrench } from 'lucide-react'
 import { api } from '../api'
 import { SeverityBadge, ScoreBar, Chip, Spinner, ErrorBox, StatCard, Empty, LevelPill, SEV_COLOR } from '../components/ui'
 import ActivityChart from '../components/ActivityChart'
+import LogViewer from '../components/LogViewer'
 import EventsTable from '../components/EventsTable'
 import { fmtTime, fmtDuration, fmtNum, RULE_LABELS, STAGE_LABELS } from '../lib/format'
 
@@ -96,11 +97,17 @@ export default function Analysis() {
   const [showDetails, setShowDetails] = useState(!!tab)
   const [showMinor, setShowMinor] = useState(false)
   const [data, setData] = useState(null)
+  const [annotated, setAnnotated] = useState(null)
   const [error, setError] = useState(null)
 
   const load = useCallback(() => {
     setError(null)
-    api.getUpload(id).then(setData).catch(setError)
+    Promise.all([api.getUpload(id), api.annotated(id)])
+      .then(([upload, ann]) => {
+        setData(upload)
+        setAnnotated(ann)
+      })
+      .catch(setError)
   }, [id])
   useEffect(load, [load])
   useEffect(() => {
@@ -110,7 +117,7 @@ export default function Analysis() {
   const setTab = (t, extra = {}) => setParams({ tab: t, ...extra })
 
   if (error) return <ErrorBox error={error} onRetry={load} />
-  if (!data) return <Spinner label="Checking results…" />
+  if (!data || !annotated) return <Spinner label="Checking results…" />
 
   const { stats, histogram, entities } = data.summary
   const major = data.incidents.filter((i) => i.severity !== 'low')
@@ -118,7 +125,7 @@ export default function Analysis() {
   const activeTab = tab || 'chart'
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <Link to="/" className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Check other logs
@@ -129,7 +136,27 @@ export default function Analysis() {
         </div>
       </div>
 
-      <Verdict incidents={data.incidents} />
+      <section>
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Your logs, line by line</h2>
+            <p className="mt-0.5 text-sm text-muted">
+              Suspicious lines have a wavy underline (
+              <span className="text-sev-critical">red</span> = act now, <span className="text-sev-high">orange</span> = serious,{' '}
+              <span className="text-sev-medium">yellow</span> = suspicious, <span className="text-sev-low">blue</span> = minor). Click one to see why.
+            </p>
+          </div>
+          <a href="#verdict" className="btn-ghost">
+            Jump to verdict <ArrowDown className="h-4 w-4" />
+          </a>
+        </div>
+        <LogViewer uploadId={id} data={annotated} />
+      </section>
+
+      <section id="verdict" className="scroll-mt-20 space-y-3 border-t border-line pt-6">
+        <h2 className="text-lg font-semibold text-white">Verdict</h2>
+        <Verdict incidents={data.incidents} />
+      </section>
 
       {major.length > 0 && (
         <section className="space-y-3">

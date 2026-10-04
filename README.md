@@ -25,7 +25,12 @@ The idea is to go past "this IP had 40 failed logins" and tell the analyst the w
 | Evidence | Every alert stores the exact events behind it. Click any timeline step to see the raw log lines with file name and line number. |
 | **Bonus: attack sequence** | Kill-chain progression, a "what happened" summary, per-stage recommended actions, and a Markdown incident report export. |
 
-Also: one-click sample scenario, activity chart, event explorer (filter by IP / user / source / outcome / free text), works on mobile.
+**How the results page reads:**
+1. **Your logs, line by line.** The uploaded file is shown with every suspicious line given a wavy underline, coloured by how serious it is. Long runs of normal lines are folded. Clicking a line opens a popup beside it (with an arrow pointing at the line) that explains *why the line is suspicious*, *what the risk is* in plain English, and which step of which attack it belongs to.
+2. **Verdict.** At the end: "Someone broke in" / "Nothing confirmed, but a few things look odd" / "No signs of an attack", followed by the findings. Each finding opens the step-by-step incident timeline with evidence.
+3. **Technical details** (folded): activity chart, flagged IPs & users with risk scores, all alerts, and a log search.
+
+The home page has two demo files (`attack.log`, `normal.log`). You can **download** them and upload them by hand, or **check them straight away** with one click.
 
 ## Architecture
 
